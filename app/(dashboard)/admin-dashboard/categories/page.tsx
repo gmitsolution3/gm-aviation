@@ -1,6 +1,7 @@
 "use client";
 
 import { useFetch } from "@/hooks/swr/useFetch";
+import { useDelete } from "@/hooks/swr/useDelete"; // 👈 NEW
 import { ICategory, IPagination } from "@/types";
 import { formatDate } from "@/utils";
 import {
@@ -16,6 +17,7 @@ import {
   MoreHorizontal,
   Search,
   SortAsc,
+  Trash2, // 👈 NEW
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -50,6 +52,7 @@ import CategoryEmpty from "@/components/admin-dashboard/categories/CategoryEmpty
 import CreateCategoryModal from "@/components/admin-dashboard/categories/CreateCategoryModal";
 import EditCategoryModal from "@/components/admin-dashboard/categories/EditCategoryModal";
 import ViewCategoryModal from "@/components/admin-dashboard/categories/ViewCategoryModal";
+import Swal from "sweetalert2"; // 👈 NEW (if not already imported)
 
 interface ApiResponse {
   data: ICategory[];
@@ -84,6 +87,14 @@ export default function AdminCategoriesPage() {
     `/categories?${queryParams}`
   );
 
+  // 👇 NEW: Delete hook
+  const { mutate: deleteCategory, isLoading: isDeleting } = useDelete(
+    "/categories",
+    {
+      revalidateKey: "/categories",
+    }
+  );
+
   // Handlers
   const handleView = (item: ICategory) => {
     setSelectedItem(item);
@@ -95,9 +106,54 @@ export default function AdminCategoriesPage() {
     setIsEditModalOpen(true);
   };
 
+  // 👇 NEW: Delete handler with confirmation
+  const handleDelete = (id: string, name: string) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: `You won't be able to revert deleting category "${name}"!`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#232156",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          Swal.fire({
+            title: "Deleting...",
+            text: "Please wait",
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            willOpen: () => {
+              Swal.showLoading();
+            },
+          });
+
+          await deleteCategory(id);
+
+          Swal.fire({
+            title: "Deleted!",
+            text: `Category "${name}" has been deleted successfully.`,
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+          });
+
+          refetch(); // refresh list
+        } catch (error: any) {
+          Swal.fire({
+            title: "Error",
+            text: error.response?.data?.message || "Failed to delete category",
+            icon: "error",
+          });
+        }
+      }
+    });
+  };
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // reset to first page on new search
+    setCurrentPage(1);
   };
 
   const handleSortChange = (value: string) => {
@@ -111,7 +167,7 @@ export default function AdminCategoriesPage() {
     setCurrentPage(1);
   };
 
-  // Table columns – adapted to ICategory
+  // Table columns – added delete action
   const columns: ColumnDef<ICategory>[] = [
     {
       accessorKey: "name",
@@ -157,21 +213,39 @@ export default function AdminCategoriesPage() {
             size="icon"
             className="h-8 w-8 hover:text-primary"
             onClick={() => handleView(row.original)}
+            disabled={isDeleting} // 👈 disable during deletion
           >
             <Eye className="h-4 w-4" />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hover:text-primary"
+                disabled={isDeleting} // 👈 disable trigger
+              >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => handleEdit(row.original)}>
+              <DropdownMenuItem
+                onSelect={() => handleEdit(row.original)}
+                disabled={isDeleting}
+              >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
+              </DropdownMenuItem>
+              {/* 👇 NEW: Delete menu item */}
+              <DropdownMenuItem
+                onSelect={() => handleDelete(row.original._id, row.original.name)}
+                className="text-destructive hover:text-white! hover:bg-primary!"
+                disabled={isDeleting}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {isDeleting ? "Deleting..." : "Delete"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -206,7 +280,11 @@ export default function AdminCategoriesPage() {
             </p>
           )}
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)} className="text-white p-5">
+        <Button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="text-white p-5"
+          disabled={isDeleting}
+        >
           Add Category
         </Button>
       </div>
@@ -220,11 +298,16 @@ export default function AdminCategoriesPage() {
             value={searchTerm}
             onChange={handleSearch}
             className="pl-8"
+            disabled={isDeleting}
           />
         </div>
         <div className="flex items-center gap-2">
           <SortAsc className="h-4 w-4 text-muted-foreground" />
-          <Select value={sortBy} onValueChange={handleSortChange}>
+          <Select
+            value={sortBy}
+            onValueChange={handleSortChange}
+            disabled={isDeleting}
+          >
             <SelectTrigger className="w-[150px] h-9">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
@@ -282,7 +365,11 @@ export default function AdminCategoriesPage() {
         <div className="flex items-center justify-between mt-4">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Rows per page:</span>
-            <Select value={String(limit)} onValueChange={handleLimitChange}>
+            <Select
+              value={String(limit)}
+              onValueChange={handleLimitChange}
+              disabled={isDeleting}
+            >
               <SelectTrigger className="w-20 h-8">
                 <SelectValue />
               </SelectTrigger>
@@ -300,7 +387,11 @@ export default function AdminCategoriesPage() {
               <PaginationItem>
                 <PaginationPrevious
                   onClick={() => handlePageChange(currentPageNum - 1)}
-                  className={currentPageNum <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  className={
+                    currentPageNum <= 1 || isDeleting
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
                 />
               </PaginationItem>
 
@@ -321,6 +412,7 @@ export default function AdminCategoriesPage() {
                     <PaginationLink
                       onClick={() => handlePageChange(pageNumber)}
                       isActive={pageNumber === currentPageNum}
+                      className={isDeleting ? "pointer-events-none opacity-50" : ""}
                     >
                       {pageNumber}
                     </PaginationLink>
@@ -334,7 +426,10 @@ export default function AdminCategoriesPage() {
                     <PaginationEllipsis />
                   </PaginationItem>
                   <PaginationItem>
-                    <PaginationLink onClick={() => handlePageChange(totalPage)}>
+                    <PaginationLink
+                      onClick={() => handlePageChange(totalPage)}
+                      className={isDeleting ? "pointer-events-none opacity-50" : ""}
+                    >
                       {totalPage}
                     </PaginationLink>
                   </PaginationItem>
@@ -344,7 +439,11 @@ export default function AdminCategoriesPage() {
               <PaginationItem>
                 <PaginationNext
                   onClick={() => handlePageChange(currentPageNum + 1)}
-                  className={currentPageNum >= totalPage ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  className={
+                    currentPageNum >= totalPage || isDeleting
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
                 />
               </PaginationItem>
             </PaginationContent>
