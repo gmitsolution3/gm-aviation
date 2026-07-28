@@ -1,25 +1,10 @@
 "use client";
 
-import { useFetch } from "@/hooks/swr/useFetch";
-import { useDelete } from "@/hooks/swr/useDelete"; // 👈 NEW
-import { ICategory, IPagination } from "@/types";
-import { formatDate } from "@/utils";
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import {
-  Calendar,
-  Eye,
-  Edit,
-  MoreHorizontal,
-  Search,
-  SortAsc,
-  Trash2, // 👈 NEW
-} from "lucide-react";
-import { useState } from "react";
+import TableLoader from "@/components/TableLoader";
+import CategoryEmpty from "@/components/admin-dashboard/categories/CategoryEmpty";
+import CreateCategoryModal from "@/components/admin-dashboard/categories/CreateCategoryModal";
+import EditCategoryModal from "@/components/admin-dashboard/categories/EditCategoryModal";
+import ViewCategoryModal from "@/components/admin-dashboard/categories/ViewCategoryModal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -30,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
   Pagination,
   PaginationContent,
@@ -46,13 +32,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import TableLoader from "@/components/TableLoader";
-import CategoryEmpty from "@/components/admin-dashboard/categories/CategoryEmpty";
-import CreateCategoryModal from "@/components/admin-dashboard/categories/CreateCategoryModal";
-import EditCategoryModal from "@/components/admin-dashboard/categories/EditCategoryModal";
-import ViewCategoryModal from "@/components/admin-dashboard/categories/ViewCategoryModal";
-import Swal from "sweetalert2"; // 👈 NEW (if not already imported)
+import { useDelete } from "@/hooks/swr/useDelete";
+import { useFetch } from "@/hooks/swr/useFetch";
+import { ICategory, IPagination } from "@/types";
+import { formatDate } from "@/utils";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import {
+  Calendar,
+  Edit,
+  Eye,
+  MoreHorizontal,
+  Search,
+  SortAsc,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
+import Swal from "sweetalert2";
 
 interface ApiResponse {
   data: ICategory[];
@@ -72,8 +72,12 @@ export default function AdminCategoriesPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<ICategory | null>(null);
-  const [itemToEdit, setItemToEdit] = useState<ICategory | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ICategory | null>(
+    null,
+  );
+  const [itemToEdit, setItemToEdit] = useState<ICategory | null>(
+    null,
+  );
 
   // Build query string
   const queryParams = new URLSearchParams({
@@ -84,15 +88,15 @@ export default function AdminCategoriesPage() {
   }).toString();
 
   const { data, isLoading, refetch } = useFetch<ApiResponse>(
-    `/categories?${queryParams}`
+    `/categories?${queryParams}`,
   );
 
-  // 👇 NEW: Delete hook
+  // Delete hook
   const { mutate: deleteCategory, isLoading: isDeleting } = useDelete(
     "/categories",
     {
       revalidateKey: "/categories",
-    }
+    },
   );
 
   // Handlers
@@ -106,7 +110,6 @@ export default function AdminCategoriesPage() {
     setIsEditModalOpen(true);
   };
 
-  // 👇 NEW: Delete handler with confirmation
   const handleDelete = (id: string, name: string) => {
     Swal.fire({
       title: "Are you sure?",
@@ -139,11 +142,13 @@ export default function AdminCategoriesPage() {
             showConfirmButton: false,
           });
 
-          refetch(); // refresh list
+          refetch();
         } catch (error: any) {
           Swal.fire({
             title: "Error",
-            text: error.response?.data?.message || "Failed to delete category",
+            text:
+              error.response?.data?.message ||
+              "Failed to delete category",
             icon: "error",
           });
         }
@@ -167,7 +172,7 @@ export default function AdminCategoriesPage() {
     setCurrentPage(1);
   };
 
-  // Table columns – added delete action
+  // Table columns
   const columns: ColumnDef<ICategory>[] = [
     {
       accessorKey: "name",
@@ -178,8 +183,12 @@ export default function AdminCategoriesPage() {
             <span className="text-lg">📁</span>
           </div>
           <div>
-            <div className="font-semibold">{row.getValue("name")}</div>
-            <div className="text-xs text-muted-foreground">slug: {row.original.slug}</div>
+            <div className="font-semibold">
+              {row.getValue("name")}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              slug: {row.original.slug}
+            </div>
           </div>
         </div>
       ),
@@ -213,7 +222,7 @@ export default function AdminCategoriesPage() {
             size="icon"
             className="h-8 w-8 hover:text-primary"
             onClick={() => handleView(row.original)}
-            disabled={isDeleting} // 👈 disable during deletion
+            disabled={isDeleting}
           >
             <Eye className="h-4 w-4" />
           </Button>
@@ -223,7 +232,7 @@ export default function AdminCategoriesPage() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 hover:text-primary"
-                disabled={isDeleting} // 👈 disable trigger
+                disabled={isDeleting}
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
@@ -238,9 +247,10 @@ export default function AdminCategoriesPage() {
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
               </DropdownMenuItem>
-              {/* 👇 NEW: Delete menu item */}
               <DropdownMenuItem
-                onSelect={() => handleDelete(row.original._id, row.original.name)}
+                onSelect={() =>
+                  handleDelete(row.original._id, row.original.name)
+                }
                 className="text-destructive hover:text-white! hover:bg-primary!"
                 disabled={isDeleting}
               >
@@ -273,10 +283,13 @@ export default function AdminCategoriesPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold">Categories</h1>
-          <p className="text-muted-foreground mt-1">Manage your product categories</p>
+          <p className="text-muted-foreground mt-1">
+            Manage your product categories
+          </p>
           {meta && (
             <p className="text-sm text-muted-foreground mt-1">
-              Showing {data?.data?.length || 0} of {meta.total} categories
+              Showing {data?.data?.length || 0} of {meta.total}{" "}
+              categories
             </p>
           )}
         </div>
@@ -289,8 +302,8 @@ export default function AdminCategoriesPage() {
         </Button>
       </div>
 
-      {/* Toolbar: search + sort */}
-      <div className="flex flex-wrap items-center gap-4 mb-6">
+      {/* Toolbar: search left, sort right */}
+      <div className="flex flex-wrap items-center justify-between mb-6">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -301,7 +314,7 @@ export default function AdminCategoriesPage() {
             disabled={isDeleting}
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mt-2 sm:mt-0">
           <SortAsc className="h-4 w-4 text-muted-foreground" />
           <Select
             value={sortBy}
@@ -312,8 +325,12 @@ export default function AdminCategoriesPage() {
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="createdAt">Created (newest)</SelectItem>
-              <SelectItem value="-createdAt">Created (oldest)</SelectItem>
+              <SelectItem value="createdAt">
+                Created (newest)
+              </SelectItem>
+              <SelectItem value="-createdAt">
+                Created (oldest)
+              </SelectItem>
               <SelectItem value="name">Name A–Z</SelectItem>
               <SelectItem value="-name">Name Z–A</SelectItem>
             </SelectContent>
@@ -323,7 +340,9 @@ export default function AdminCategoriesPage() {
 
       {/* Table / Empty state */}
       {!isDataAvailable ? (
-        <CategoryEmpty onCreateClick={() => setIsCreateModalOpen(true)} />
+        <CategoryEmpty
+          onCreateClick={() => setIsCreateModalOpen(true)}
+        />
       ) : (
         <Card className="overflow-hidden border shadow-sm p-0">
           <div className="overflow-x-auto">
@@ -338,7 +357,10 @@ export default function AdminCategoriesPage() {
                       >
                         {header.isPlaceholder
                           ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
                       </th>
                     ))}
                   </tr>
@@ -346,10 +368,16 @@ export default function AdminCategoriesPage() {
               </thead>
               <tbody>
                 {table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                  <tr
+                    key={row.id}
+                    className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="px-6 py-4">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
                       </td>
                     ))}
                   </tr>
@@ -361,10 +389,13 @@ export default function AdminCategoriesPage() {
       )}
 
       {/* Pagination */}
+
       {isDataAvailable && (
-        <div className="flex items-center justify-between mt-4">
+        <div className="flex items-center justify-between mt-4 w-full">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Rows per page:</span>
+            <span className="text-sm text-muted-foreground">
+              Rows per page:
+            </span>
             <Select
               value={String(limit)}
               onValueChange={handleLimitChange}
@@ -382,72 +413,90 @@ export default function AdminCategoriesPage() {
             </Select>
           </div>
 
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => handlePageChange(currentPageNum - 1)}
-                  className={
-                    currentPageNum <= 1 || isDeleting
-                      ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
-                  }
-                />
-              </PaginationItem>
+          <div>
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() =>
+                      handlePageChange(currentPageNum - 1)
+                    }
+                    className={
+                      currentPageNum <= 1 || isDeleting
+                        ? "pointer-events-none opacity-50"
+                        : "cursor-pointer"
+                    }
+                  />
+                </PaginationItem>
 
-              {Array.from({ length: Math.min(totalPage, 5) }, (_, i) => {
-                let pageNumber: number;
-                if (totalPage <= 5) {
-                  pageNumber = i + 1;
-                } else if (currentPageNum <= 3) {
-                  pageNumber = i + 1;
-                } else if (currentPageNum >= totalPage - 2) {
-                  pageNumber = totalPage - 4 + i;
-                } else {
-                  pageNumber = currentPageNum - 2 + i;
-                }
-                if (pageNumber < 1 || pageNumber > totalPage) return null;
-                return (
-                  <PaginationItem key={pageNumber}>
-                    <PaginationLink
-                      onClick={() => handlePageChange(pageNumber)}
-                      isActive={pageNumber === currentPageNum}
-                      className={isDeleting ? "pointer-events-none opacity-50" : ""}
-                    >
-                      {pageNumber}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              })}
+                {Array.from(
+                  { length: Math.min(totalPage, 5) },
+                  (_, i) => {
+                    let pageNumber: number;
+                    if (totalPage <= 5) {
+                      pageNumber = i + 1;
+                    } else if (currentPageNum <= 3) {
+                      pageNumber = i + 1;
+                    } else if (currentPageNum >= totalPage - 2) {
+                      pageNumber = totalPage - 4 + i;
+                    } else {
+                      pageNumber = currentPageNum - 2 + i;
+                    }
+                    if (pageNumber < 1 || pageNumber > totalPage)
+                      return null;
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink
+                          onClick={() => handlePageChange(pageNumber)}
+                          isActive={pageNumber === currentPageNum}
+                          className={
+                            isDeleting
+                              ? "pointer-events-none opacity-50"
+                              : ""
+                          }
+                        >
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  },
+                )}
 
-              {totalPage > 5 && currentPageNum < totalPage - 2 && (
-                <>
-                  <PaginationItem>
-                    <PaginationEllipsis />
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink
-                      onClick={() => handlePageChange(totalPage)}
-                      className={isDeleting ? "pointer-events-none opacity-50" : ""}
-                    >
-                      {totalPage}
-                    </PaginationLink>
-                  </PaginationItem>
-                </>
-              )}
+                {totalPage > 5 && currentPageNum < totalPage - 2 && (
+                  <>
+                    <PaginationItem>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationLink
+                        onClick={() => handlePageChange(totalPage)}
+                        className={
+                          isDeleting
+                            ? "pointer-events-none opacity-50"
+                            : ""
+                        }
+                      >
+                        {totalPage}
+                      </PaginationLink>
+                    </PaginationItem>
+                  </>
+                )}
 
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => handlePageChange(currentPageNum + 1)}
-                  className={
-                    currentPageNum >= totalPage || isDeleting
-                      ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
-                  }
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() =>
+                      handlePageChange(currentPageNum + 1)
+                    }
+                    className={
+                      currentPageNum >= totalPage || isDeleting
+                        ? "pointer-events-none opacity-50"
+                        : "cursor-pointer"
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
         </div>
       )}
 
