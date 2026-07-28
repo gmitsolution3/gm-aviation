@@ -5,6 +5,7 @@ import {
   List,
   Settings,
   UserRoundSearch,
+  BookCheck
 } from "lucide-react";
 
 const baseDashboardUrl = "/admin-dashboard";
@@ -20,6 +21,11 @@ export const mainMenuItems = [
     title: "Category",
     url: dashboardMenu.defineUrl("/categories"),
     icon: List,
+  },
+  {
+    title: "Course",
+    url: dashboardMenu.defineUrl("/courses"),
+    icon: BookCheck,
   },
 ];
 
