@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CreditCard, FileText, Plane, Users } from "lucide-react";
@@ -173,13 +172,13 @@ export default function Admission() {
                     transition={{ duration: 0.35, ease: "easeOut" }}
                     className="flex flex-col items-center"
                   >
-                    <Badge className="mx-auto flex size-12 items-center justify-center rounded-full bg-brand-navy p-0 text-[#F2A65A] hover:bg-brand-navy">
+                    <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-brand-navy p-0 text-[#F2A65A] hover:bg-brand-navy">
                       <ActiveIcon
                         className="size-6"
                         aria-hidden="true"
                       />
-                    </Badge>
-                    <span className="mt-4 block text-xs font-semibold uppercase tracking-[0.2em] text-[#c98a3e]">
+                    </div>
+                    <span className="mt-4 block text-xs font-semibold uppercase tracking-[0.2em] text-[#251d14]">
                       {activeStep.step}
                     </span>
                     <h3 className="mt-1 font-heading text-xl font-bold text-brand-ink">
@@ -208,7 +207,8 @@ export default function Admission() {
                   onClick={() => setActive(i)}
                   aria-pressed={isActive}
                   aria-label={`View ${step.title}`}
-                  className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5 rounded-full p-0 hover:bg-transparent focus-visible:ring-2 focus-visible:ring-brand-navy focus-visible:ring-offset-2"
+                  /* Changed: added h-auto w-auto p-0, removed rounded-full from the outer button */
+                  className="absolute flex h-auto w-auto -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5 p-0 hover:bg-transparent focus-visible:ring-2 focus-visible:ring-brand-navy focus-visible:ring-offset-2"
                   style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
                 >
                   <motion.span
@@ -218,7 +218,8 @@ export default function Admission() {
                       stiffness: 300,
                       damping: 20,
                     }}
-                    className={`flex size-14 items-center justify-center rounded-full border-2 shadow-sm transition-colors ${
+                    /* Changed: added shrink-0 so flexbox never squashes the circle */
+                    className={`flex size-14 shrink-0 items-center justify-center rounded-full border-2 shadow-sm transition-colors ${
                       isActive
                         ? "border-brand-navy bg-brand-navy text-[#F2A65A]"
                         : "border-brand-border bg-white text-brand-body/50 hover:border-brand-navy/40 hover:text-brand-navy"

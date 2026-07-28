@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -44,16 +43,13 @@ export default function About() {
         {/* Left */}
         <div>
           <Reveal>
-            <Badge
-              variant="outline"
-              className="inline-flex items-center gap-2 border-brand-accent text-sm font-semibold uppercase tracking-[0.18em] text-brand-accent hover:bg-transparent"
-            >
+            <div className="inline-flex items-center gap-2 border-brand-accent text-sm font-semibold uppercase tracking-[0.18em] text-brand-accent hover:bg-transparent">
               <span
                 className="h-px w-6 bg-brand-accent"
                 aria-hidden="true"
               />
               About Meridian
-            </Badge>
+            </div>
             <h2 className="mt-4 text-pretty font-heading text-3xl font-bold leading-tight tracking-tight text-brand-ink sm:text-4xl">
               A legacy of training the world&apos;s most capable
               aviators
@@ -67,13 +63,13 @@ export default function About() {
             </p>
           </Reveal>
 
-          <div className="mt-10 grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
+          <div className="mt-10 grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2 !border-none">
             {FEATURES.map((feature, i) => {
               const Icon = feature.icon;
               return (
                 <Reveal key={feature.title} delay={i * 0.08}>
-                  <Card className="border-0 bg-transparent shadow-none">
-                    <CardContent className="flex gap-4 p-0">
+                  <div className="!border-none bg-transparent shadow-none">
+                    <CardContent className="flex gap-4 p-0 !border-none">
                       <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-light text-brand-navy">
                         <Icon className="size-5" aria-hidden="true" />
                       </span>
@@ -86,7 +82,7 @@ export default function About() {
                         </p>
                       </div>
                     </CardContent>
-                  </Card>
+                  </div>
                 </Reveal>
               );
             })}

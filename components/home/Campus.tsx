@@ -42,16 +42,14 @@ export default function Campus() {
       <div className="mx-auto grid max-w-[1440px] grid-cols-1 items-center gap-12 px-6 lg:grid-cols-2 lg:gap-16">
         {/* Left */}
         <Reveal>
-          <Badge
-            variant="outline"
+          <div
             className="inline-flex items-center gap-2 border-brand-accent text-sm font-semibold uppercase tracking-[0.18em] text-brand-accent hover:bg-brand-accent/10"
           >
-            <Separator
-              orientation="horizontal"
+            <div
               className="h-px w-6 bg-brand-accent"
             />
             Our Campus
-          </Badge>
+          </div>
           <h2 className="mt-4 text-pretty font-heading text-3xl font-bold leading-tight tracking-tight text-brand-ink sm:text-4xl">
             A campus built for immersive aviation learning
           </h2>
