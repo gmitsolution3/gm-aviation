@@ -6,7 +6,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Plus } from "lucide-react";
 import Reveal from "../Reveal";
 import SectionTitle from "../SectionTitle";
 
@@ -67,9 +66,6 @@ export default function Faq() {
               >
                 <AccordionTrigger className="flex w-full items-center justify-between gap-4 py-5 text-left font-sans text-base font-semibold text-brand-ink outline-none hover:no-underline md:text-lg">
                   {faq.q}
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-accent/10 text-brand-accent transition-transform duration-300 group-data-[state=open]:rotate-45">
-                    <Plus className="size-4" aria-hidden="true" />
-                  </span>
                 </AccordionTrigger>
                 <AccordionContent className="pb-5 pr-12 text-pretty text-sm leading-relaxed text-brand-body md:text-base">
                   {faq.a}

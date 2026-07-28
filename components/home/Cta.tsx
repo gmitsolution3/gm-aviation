@@ -51,7 +51,7 @@ export default function Cta() {
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
               <Button
                 size="lg"
-                className="bg-brand-accent font-semibold text-brand-ink hover:bg-brand-accent/90"
+                className="bg-brand-accent font-semibold text-brand-ink hover:bg-brand-accent/90 rounded-4xl"
               >
                 Apply Now
                 <ArrowRight className="ml-2 size-4" />
@@ -59,7 +59,7 @@ export default function Cta() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-white/30 font-semibold text-white hover:bg-white/10"
+                className="border-white/30 font-semibold text-white bg-white/10 rounded-4xl"
               >
                 <PhoneCall className="mr-2 size-4" />
                 Talk to an Advisor
