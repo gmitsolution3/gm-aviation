@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.5.7",
+    "@tanstack/react-table": "^8.21.3",
     "axios": "^1.18.1",
     "better-auth": "^1.6.25",
     "class-variance-authority": "^0.7.1",

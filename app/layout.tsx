@@ -1,3 +1,4 @@
+import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Metadata, Viewport } from "next";
 import { Inter, Manrope } from "next/font/google";
 import { Toaster } from "react-hot-toast";
@@ -63,8 +64,12 @@ export default async function RootLayout({
       className={`${inter.variable} ${manrope.variable}`}
     >
       <body className="bg-background font-body antialiased">
-        <AuthProvider session={session}>{children}</AuthProvider>
-        <Toaster />
+        <TooltipProvider>
+          <AuthProvider session={session}>
+            {children}
+            <Toaster />
+          </AuthProvider>
+        </TooltipProvider>
       </body>
     </html>
   );
