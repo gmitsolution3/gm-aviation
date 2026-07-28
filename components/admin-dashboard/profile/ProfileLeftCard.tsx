@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ProfileFormValues } from "@/form-schema/ProfileFormSchema";
+import { ProfileFormValues } from "@/schema/profileForm.schema";
 import { getUserInitials } from "@/utils";
 import { Camera, Mail, Phone, User } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";

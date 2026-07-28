@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { ImageUploader } from "@/components/image-uploader";
 import type { UseFormReturn } from "react-hook-form";
-import { ProfileFormValues } from "@/form-schema/ProfileFormSchema";
+import { ProfileFormValues } from "@/schema/profileForm.schema";
 
 interface ProfileImageDialogProps {
   open: boolean;

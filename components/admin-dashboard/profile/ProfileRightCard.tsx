@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import type { UseFormReturn } from "react-hook-form";
-import { ProfileFormValues } from "@/form-schema/ProfileFormSchema";
+import { ProfileFormValues } from "@/schema/profileForm.schema";
 import ProfileDisplay from "./ProfileDisplay"; 
 
 interface ProfileRightCardProps {

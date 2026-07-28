@@ -1,9 +1,9 @@
 // app/profile/page.tsx
 "use client";
 
-import ProfileLeftCard from "@/components/AdminDashboard/profile/ProfileLeftCard";
-import ProfileLoader from "@/components/AdminDashboard/profile/ProfileLoader";
-import ProfileRightCard from "@/components/AdminDashboard/profile/ProfileRightCard";
+import ProfileLeftCard from "@/components/admin-dashboard/profile/ProfileLeftCard";
+import ProfileLoader from "@/components/admin-dashboard/profile/ProfileLoader";
+import ProfileRightCard from "@/components/admin-dashboard/profile/ProfileRightCard";
 import {
   Alert,
   AlertDescription,
@@ -15,11 +15,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useSession } from "@/lib/auth-context";
 import {
   ProfileFormValues,
   profileSchema,
-} from "@/form-schema/ProfileFormSchema";
-import { useSession } from "@/lib/auth-context";
+} from "@/schema/profileForm.schema";
 import { notify } from "@/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle } from "lucide-react";
