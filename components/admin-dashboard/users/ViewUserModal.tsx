@@ -72,17 +72,6 @@ export default function ViewUserModal({
                 <Badge variant="outline" className="text-xs">
                   {user.role}
                 </Badge>
-                {user.isBanned ? (
-                  <Badge variant="destructive" className="gap-1">
-                    <Ban className="h-3 w-3" />
-                    Banned
-                  </Badge>
-                ) : (
-                  <Badge variant="default" className="gap-1 bg-green-500 hover:bg-green-600">
-                    <CheckCircle className="h-3 w-3" />
-                    Active
-                  </Badge>
-                )}
                 {user.emailVerified ? (
                   <Badge variant="default" className="gap-1 bg-green-500 hover:bg-green-600">
                     <CheckCircle className="h-3 w-3" />
