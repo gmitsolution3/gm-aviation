@@ -5,11 +5,6 @@ import ProfileLeftCard from "@/components/admin-dashboard/profile/ProfileLeftCar
 import ProfileLoader from "@/components/admin-dashboard/profile/ProfileLoader";
 import ProfileRightCard from "@/components/admin-dashboard/profile/ProfileRightCard";
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
-import {
   Card,
   CardDescription,
   CardHeader,
@@ -22,8 +17,6 @@ import {
 } from "@/schema/profileForm.schema";
 import { notify } from "@/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle } from "lucide-react";
-import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -50,7 +43,7 @@ export default function ProfilePage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/user/update", {
+      const response = await fetch("/api/auth/user/update", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -99,29 +92,7 @@ export default function ProfilePage() {
 
   return (
     <Suspense fallback={<ProfileLoader />}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 py-10 px-4 rounded-lg">
-        {/* Email Verification Alert */}
-        {user && !user.emailVerified && (
-          <Alert
-            variant="destructive"
-            className="mb-6 border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20"
-          >
-            <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-500" />
-            <AlertTitle className="text-yellow-800 dark:text-yellow-400">
-              Email Not Verified
-            </AlertTitle>
-            <AlertDescription className="text-yellow-700 dark:text-yellow-500">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <span>
-                  Your email address <strong>{user.email}</strong> has
-                  not been verified yet.{" "}
-                  <Link href="/verify-user">Click here</Link> to
-                  verify your email
-                </span>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
+      <div className="min-h-screen py-10 px-4 rounded-lg">
         <div className="container mx-auto max-w-5xl">
           {/* Header */}
           <div className="mb-8">

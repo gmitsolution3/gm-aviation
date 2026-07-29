@@ -1,6 +1,5 @@
 "use client";
 
-import BanUserModal from "@/components/admin-dashboard/users/BanUserModal";
 import EditUserModal from "@/components/admin-dashboard/users/EditUserModal";
 import UserEmpty from "@/components/admin-dashboard/users/UserEmpty";
 import ViewUserModal from "@/components/admin-dashboard/users/ViewUserModal";
@@ -35,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { useFetch } from "@/hooks/swr/useFetch";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useSession } from "@/lib/auth-context";
 import { IUser } from "@/types";
 import { formatDate } from "@/utils";
 import {
@@ -44,7 +44,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import {
-  Ban,
   Calendar,
   CheckCircle,
   Edit,
@@ -58,7 +57,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import {useSession} from "@/lib/auth-context"
 
 interface ApiResponse {
   data: IUser[];
@@ -75,29 +73,26 @@ export default function AdminUsersPage() {
   const [limit, setLimit] = useState(10);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filterRole, setFilterRole] = useState<string>("");
-  const [filterBan, setFilterBan] = useState<string>("");
   const debouncedSearch = useDebounce(searchTerm, 500);
 
   const { session } = useSession();
 
-  console.log(session);
-
   const { data, isLoading, refetch } = useFetch<ApiResponse>(
-    `/users?page=${currentPage}&limit=${limit}${debouncedSearch ? `&searchTerm=${debouncedSearch}` : ""}${filterRole ? `&role=${filterRole}` : ""}${filterBan ? `&isBanned=${filterBan}` : ""}`,
+    `/users?page=${currentPage}&limit=${limit}${
+      debouncedSearch ? `&searchTerm=${debouncedSearch}` : ""
+    }${
+      filterRole && filterRole !== "all" ? `&role=${filterRole}` : ""
+    }`
   );
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isBanModalOpen, setIsBanModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<IUser | null>(
-    null,
-  );
+  const [selectedItem, setSelectedItem] = useState<IUser | null>(null);
   const [itemToEdit, setItemToEdit] = useState<IUser | null>(null);
-  const [itemToBan, setItemToBan] = useState<IUser | null>(null);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, filterRole, filterBan]);
+  }, [debouncedSearch, filterRole]);
 
   const handleView = (item: IUser) => {
     setSelectedItem(item);
@@ -109,25 +104,14 @@ export default function AdminUsersPage() {
     setIsEditModalOpen(true);
   };
 
-  const handleBan = (item: IUser) => {
-    setItemToBan(item);
-    setIsBanModalOpen(true);
-  };
-
   const handleRoleFilterChange = (value: string) => {
     setFilterRole(value);
-    setCurrentPage(1);
-  };
-
-  const handleBanFilterChange = (value: string) => {
-    setFilterBan(value);
     setCurrentPage(1);
   };
 
   const clearFilters = () => {
     setSearchTerm("");
     setFilterRole("");
-    setFilterBan("");
     setCurrentPage(1);
   };
 
@@ -156,9 +140,7 @@ export default function AdminUsersPage() {
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="font-semibold">
-              {row.getValue("name")}
-            </div>
+            <div className="font-semibold">{row.getValue("name")}</div>
             <div className="text-sm text-muted-foreground">
               {row.original.email}
             </div>
@@ -199,29 +181,6 @@ export default function AdminUsersPage() {
             <Badge variant="secondary" className="gap-1">
               <XCircle className="h-3 w-3" />
               Unverified
-            </Badge>
-          )}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "isBanned",
-      header: "Status",
-      size: 120,
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          {row.original.isBanned ? (
-            <Badge variant="destructive" className="gap-1">
-              <Ban className="h-3 w-3" />
-              Banned
-            </Badge>
-          ) : (
-            <Badge
-              variant="default"
-              className="gap-1 bg-green-500 hover:bg-green-600"
-            >
-              <CheckCircle className="h-3 w-3" />
-              Active
             </Badge>
           )}
         </div>
@@ -277,17 +236,6 @@ export default function AdminUsersPage() {
                 <Edit className="h-4 w-4 mr-2" />
                 Update Role
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => handleBan(row.original)}
-                className={
-                  row.original.isBanned
-                    ? "hover:text-white! hover:bg-primary!"
-                    : "text-destructive hover:text-white! hover:bg-primary!"
-                }
-              >
-                <Ban className="h-4 w-4 mr-2" />
-                {row.original.isBanned ? "Unban User" : "Ban User"}
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -317,7 +265,7 @@ export default function AdminUsersPage() {
   const currentPageNum = meta?.page || 1;
 
   const isDataAvailable = (data?.data?.length as number) > 0;
-  const hasActiveFilters = searchTerm || filterRole || filterBan;
+  const hasActiveFilters = searchTerm || filterRole;
 
   return (
     <section className="container mx-auto px-5 lg:px-0 py-8">
@@ -369,19 +317,6 @@ export default function AdminUsersPage() {
               <SelectItem value="all">All roles</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
               <SelectItem value="user">User</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={filterBan}
-            onValueChange={handleBanFilterChange}
-          >
-            <SelectTrigger className="w-[150px] h-9">
-              <SelectValue placeholder="All status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All status</SelectItem>
-              <SelectItem value="true">Banned</SelectItem>
-              <SelectItem value="false">Active</SelectItem>
             </SelectContent>
           </Select>
           {hasActiveFilters && (
@@ -559,12 +494,6 @@ export default function AdminUsersPage() {
         isModalOpen={isDetailModalOpen}
         setIsModalOpen={setIsDetailModalOpen}
         user={selectedItem}
-      />
-      <BanUserModal
-        isModalOpen={isBanModalOpen}
-        setIsModalOpen={setIsBanModalOpen}
-        user={itemToBan}
-        onSuccess={refetch}
       />
     </section>
   );
