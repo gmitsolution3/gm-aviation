@@ -33,6 +33,11 @@ export const mainMenuItems = [
     url: dashboardMenu.defineUrl("/admissions"),
     icon: BookA,
   },
+  {
+    title: "Enrollments",
+    url: dashboardMenu.defineUrl("/enrollments"),
+    icon: BookA,
+  },
 ];
 
 export const settingsItems = [

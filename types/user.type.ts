@@ -7,7 +7,6 @@ export interface IUser {
   imagePublicId: string;
   phone: string;
   role: string;
-  isBanned: boolean;
   createdAt: string;
   updatedAt: string;
 }

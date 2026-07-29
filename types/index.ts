@@ -4,3 +4,4 @@ export * from "./pagination.type";
 export * from "./admission-form.type";
 export * from "./admission.type";
 export * from "./user.type";
+export * from "./enrollment.type";
