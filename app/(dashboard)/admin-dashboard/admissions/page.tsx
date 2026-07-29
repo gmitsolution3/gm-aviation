@@ -3,6 +3,7 @@
 import TableLoader from "@/components/TableLoader";
 import AdmissionEmpty from "@/components/admin-dashboard/admissions/AdmissionEmpty";
 import ViewAdmissionModal from "@/components/admin-dashboard/admissions/ViewAdmissionModal";
+import ReviewAdmissionModal from "@/components/admin-dashboard/admissions/ReviewAdmissionModal"; // 👈 NEW
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,8 @@ import {
   AlertCircle,
   XCircle,
   BookOpen,
+  ClipboardCheck,
+  MessageSquare, // 👈 NEW
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -69,9 +72,11 @@ export default function Admissions() {
   const [filterStatus, setFilterStatus] = useState<string>("");
   const debouncedSearch = useDebounce(searchTerm, 500);
 
-  // Modal state
+  // Modal states
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<IAdmission | null>(null);
+  const [itemToReview, setItemToReview] = useState<IAdmission | null>(null);
 
   // Build query string
   const queryParams = new URLSearchParams({
@@ -94,6 +99,11 @@ export default function Admissions() {
   const handleView = (item: IAdmission) => {
     setSelectedItem(item);
     setIsDetailModalOpen(true);
+  };
+
+  const handleReview = (item: IAdmission) => {
+    setItemToReview(item);
+    setIsReviewModalOpen(true);
   };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,10 +141,10 @@ export default function Admissions() {
         icon: Clock,
         label: "Submitted",
       },
-      reviewed: {
+      "under-review": {
         variant: "outline",
         icon: AlertCircle,
-        label: "Reviewed",
+        label: "Under Review",
       },
       approved: {
         variant: "default",
@@ -211,6 +221,39 @@ export default function Admissions() {
       header: "Status",
       cell: ({ row }) => getStatusBadge(row.getValue("status")),
     },
+    // 👇 NEW Review column
+    {
+      accessorKey: "review",
+      header: "Review",
+      cell: ({ row }) => {
+        const review = row.original.review;
+        if (review) {
+          return (
+            <div className="space-y-1">
+              <Badge variant="default" className="gap-1 bg-green-500 hover:bg-green-600">
+                <CheckCircle className="h-3 w-3" />
+                Reviewed
+              </Badge>
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <MessageSquare className="h-3 w-3" />
+                <span className="truncate max-w-[150px]" title={review.remark}>
+                  {review.remark || "No remark"}
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {formatDate(review.reviewedAt)}
+              </div>
+            </div>
+          );
+        }
+        return (
+          <Badge variant="secondary" className="gap-1">
+            <XCircle className="h-3 w-3" />
+            Not Reviewed
+          </Badge>
+        );
+      },
+    },
     {
       accessorKey: "createdAt",
       header: "Submitted",
@@ -225,14 +268,24 @@ export default function Admissions() {
       id: "actions",
       header: "",
       cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 hover:text-primary"
-          onClick={() => handleView(row.original)}
-        >
-          <Eye className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:text-primary"
+            onClick={() => handleView(row.original)}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:text-primary"
+            onClick={() => handleReview(row.original)}
+          >
+            <ClipboardCheck className="h-4 w-4" />
+          </Button>
+        </div>
       ),
     },
   ];
@@ -296,7 +349,7 @@ export default function Admissions() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="submitted">Submitted</SelectItem>
-              <SelectItem value="reviewed">Reviewed</SelectItem>
+              <SelectItem value="under-review">Under Review</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
               <SelectItem value="rejected">Rejected</SelectItem>
             </SelectContent>
@@ -458,11 +511,17 @@ export default function Admissions() {
         </div>
       )}
 
-      {/* View Modal */}
+      {/* Modals */}
       <ViewAdmissionModal
         isModalOpen={isDetailModalOpen}
         setIsModalOpen={setIsDetailModalOpen}
         admission={selectedItem}
+      />
+      <ReviewAdmissionModal
+        isModalOpen={isReviewModalOpen}
+        setIsModalOpen={setIsReviewModalOpen}
+        admission={itemToReview}
+        onSuccess={refetch}
       />
     </section>
   );

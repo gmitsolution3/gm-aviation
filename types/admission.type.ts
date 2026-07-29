@@ -1,4 +1,4 @@
-import { ICourse } from '@/types';
+import { ICourse } from "@/types";
 
 export interface IAdmission {
   _id: string;
@@ -48,6 +48,10 @@ export interface IAdmission {
     passport?: { url: string };
     medicalCertificate?: { url: string };
   };
+  review?: {
+    reviewedAt: string;
+    remark: string;
+  } | null;
   createdAt: string;
   updatedAt: string;
 }
