@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { ImageUploader } from "@/components/image-uploader";
 import { X } from "lucide-react";
 import { useFetch } from "@/hooks/swr/useFetch";
 import { usePatch } from "@/hooks/swr/usePatch";
@@ -119,6 +120,11 @@ export default function EditCourseModal({
       });
     }
   }, [course, reset]);
+
+
+  const handleImageChange = (url: string, publicId: string) => {
+    setValue("image", url, { shouldValidate: true });
+  };
 
   const handleClose = () => {
     setIsModalOpen(false);
@@ -299,13 +305,12 @@ export default function EditCourseModal({
             <Textarea id="edit-description" {...register("description")} />
           </div>
 
-          {/* Image URL */}
+          {/* 👇 REPLACED: Image URL input with ImageUploader */}
           <div className="space-y-2">
-            <Label htmlFor="edit-image">Image URL</Label>
-            <Input
-              id="edit-image"
-              {...register("image")}
-              placeholder="https://..."
+            <Label>Course Image</Label>
+            <ImageUploader
+              value={watch("image")}
+              onChange={handleImageChange}
             />
             {errors.image && (
               <p className="text-sm text-destructive">{errors.image.message}</p>

@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { ImageUploader } from "@/components/image-uploader"; // 👈 NEW
 import { X } from "lucide-react";
 import { useFetch } from "@/hooks/swr/useFetch";
 import { ICategory } from "@/types";
@@ -104,6 +105,12 @@ export default function CreateCourseModal({
     setChecklistInput("");
     setCareerInput("");
     setShiftInput("");
+  };
+
+  // 👇 NEW: Handler for image upload
+  const handleImageChange = (url: string, publicId: string) => {
+    setValue("image", url, { shouldValidate: true });
+    // If you need to store publicId, add it to schema; otherwise ignore.
   };
 
   // Helper to add an item to a list
@@ -262,13 +269,12 @@ export default function CreateCourseModal({
             <Textarea id="description" {...register("description")} />
           </div>
 
-          {/* Image URL */}
+          {/* 👇 REPLACED: Image URL input with ImageUploader */}
           <div className="space-y-2">
-            <Label htmlFor="image">Image URL</Label>
-            <Input
-              id="image"
-              {...register("image")}
-              placeholder="https://..."
+            <Label>Course Image</Label>
+            <ImageUploader
+              value={watch("image")}
+              onChange={handleImageChange}
             />
             {errors.image && (
               <p className="text-sm text-destructive">{errors.image.message}</p>
