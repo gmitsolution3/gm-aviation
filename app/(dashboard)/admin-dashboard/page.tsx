@@ -39,7 +39,7 @@ export default function AdminDashboardPage() {
   const { session } = useSession();
   const user = session?.user;
 
-  const { data, isLoading, error } = useFetch<ApiResponse>(
+  const { data, isLoading, isError } = useFetch<ApiResponse>(
     "/dashboard/admin/overview"
   );
 
@@ -51,7 +51,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Card className="p-8 max-w-md">
@@ -101,7 +101,7 @@ export default function AdminDashboardPage() {
       title: "Manage Courses",
       description: "Create and edit courses",
       icon: BookOpen,
-      href: "/admin/courses",
+      href: "/admin-dashboard/courses",
       color: "text-blue-500",
       bgColor: "bg-blue-500/10",
     },
@@ -109,7 +109,7 @@ export default function AdminDashboardPage() {
       title: "Admissions",
       description: "Review applications",
       icon: FileText,
-      href: "/admin/admissions",
+      href: "/admin-dashboard/admissions",
       color: "text-purple-500",
       bgColor: "bg-purple-500/10",
     },
@@ -117,7 +117,7 @@ export default function AdminDashboardPage() {
       title: "Enrollments",
       description: "Track student enrollments",
       icon: Users,
-      href: "/admin/enrollments",
+      href: "/admin-dashboard/enrollments",
       color: "text-green-500",
       bgColor: "bg-green-500/10",
     },
@@ -125,7 +125,7 @@ export default function AdminDashboardPage() {
       title: "Users",
       description: "Manage platform users",
       icon: UserCheck,
-      href: "/admin/users",
+      href: "/admin-dashboard/users",
       color: "text-orange-500",
       bgColor: "bg-orange-500/10",
     },
@@ -133,7 +133,7 @@ export default function AdminDashboardPage() {
       title: "Categories",
       description: "Organize course categories",
       icon: School,
-      href: "/admin/categories",
+      href: "/admin-dashboard/categories",
       color: "text-emerald-500",
       bgColor: "bg-emerald-500/10",
     },
@@ -229,7 +229,7 @@ export default function AdminDashboardPage() {
                 <Progress
                   value={admissionsApprovalRate}
                   className="h-2"
-                  indicatorClassName={getProgressColor(admissionsApprovalRate)}
+                  // indicatorClassName={getProgressColor(admissionsApprovalRate)}
                 />
                 <div className="flex justify-end mt-1">
                   <Badge variant="outline" className="text-xs">
@@ -284,7 +284,7 @@ export default function AdminDashboardPage() {
                 <Progress
                   value={enrollmentsCompletionRate}
                   className="h-2"
-                  indicatorClassName={getProgressColor(enrollmentsCompletionRate)}
+                  // indicatorClassName={getProgressColor(enrollmentsCompletionRate)}
                 />
                 <div className="flex justify-end mt-1">
                   <Badge variant="outline" className="text-xs">
