@@ -19,11 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 import { useFetch } from "@/hooks/swr/useFetch";
 import { usePatch } from "@/hooks/swr/usePatch";
 import { ICategory, ICourse } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
 import * as z from "zod";
@@ -65,6 +67,11 @@ export default function EditCourseModal({
   const { data: categoriesData } = useFetch<{ data: ICategory[] }>(
     "/categories?limit=100"
   );
+
+  // Local state for list input fields
+  const [checklistInput, setChecklistInput] = useState("");
+  const [careerInput, setCareerInput] = useState("");
+  const [shiftInput, setShiftInput] = useState("");
 
   const {
     register,
@@ -116,6 +123,43 @@ export default function EditCourseModal({
   const handleClose = () => {
     setIsModalOpen(false);
     reset();
+    // Clear local inputs
+    setChecklistInput("");
+    setCareerInput("");
+    setShiftInput("");
+  };
+
+  // Helper to add an item to a list
+  const addItem = (
+    field: "checklists" | "careerOpportunities" | "availableShifts",
+    value: string
+  ) => {
+    if (!value.trim()) return;
+    const current = watch(field) || [];
+    if (current.includes(value.trim())) {
+      Swal.fire({
+        icon: "warning",
+        title: "Duplicate",
+        text: `"${value.trim()}" already exists.`,
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      return;
+    }
+    setValue(field, [...current, value.trim()]);
+    // Clear the corresponding input
+    if (field === "checklists") setChecklistInput("");
+    else if (field === "careerOpportunities") setCareerInput("");
+    else if (field === "availableShifts") setShiftInput("");
+  };
+
+  // Helper to remove an item from a list
+  const removeItem = (
+    field: "checklists" | "careerOpportunities" | "availableShifts",
+    index: number
+  ) => {
+    const current = watch(field) || [];
+    setValue(field, current.filter((_, i) => i !== index));
   };
 
   const onSubmit = async (data: FormValues) => {
@@ -126,6 +170,9 @@ export default function EditCourseModal({
         setIsModalOpen(false);
         reset();
         onSuccess?.();
+        setChecklistInput("");
+        setCareerInput("");
+        setShiftInput("");
         await Swal.fire({
           icon: "success",
           title: "Updated!",
@@ -145,12 +192,61 @@ export default function EditCourseModal({
 
   if (!course) return null;
 
-  // Helper to convert array to comma‑separated string for input fields
-  const arrayToString = (arr: string[]) => arr.join(", ");
-  const stringToArray = (str: string) =>
-    str.split(",").map((s) => s.trim()).filter(Boolean);
+  // Helper to render a list field with add/remove
+  const renderListField = (
+    label: string,
+    field: "checklists" | "careerOpportunities" | "availableShifts",
+    placeholder: string,
+    inputValue: string,
+    setInput: (v: string) => void
+  ) => {
+    const items = watch(field) || [];
 
-  // Watch values for switches
+    return (
+      <div className="space-y-2">
+        <Label>{label}</Label>
+        <div className="flex gap-2">
+          <Input
+            value={inputValue}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={placeholder}
+            className="flex-1"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addItem(field, inputValue);
+              }
+            }}
+          />
+          <Button
+            type="button"
+            variant="default"
+            onClick={() => addItem(field, inputValue)}
+            disabled={!inputValue.trim()}
+          >
+            Add
+          </Button>
+        </div>
+        {items.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {items.map((item, index) => (
+              <Badge key={index} variant="secondary" className="flex items-center gap-1 px-3 py-1">
+                {item}
+                <button
+                  type="button"
+                  onClick={() => removeItem(field, index)}
+                  className="ml-1 hover:text-destructive"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const watchedIsAdmissionOpen = watch("isAdmissionOpen");
   const watchedIsFeatured = watch("isFeatured");
   const watchedIsPublished = watch("isPublished");
@@ -240,48 +336,31 @@ export default function EditCourseModal({
           </div>
 
           {/* Checklists */}
-          <div className="space-y-2">
-            <Label htmlFor="edit-checklists">Checklists (comma separated)</Label>
-            <Input
-              id="edit-checklists"
-              defaultValue={arrayToString(watch("checklists") || [])}
-              onBlur={(e) => {
-                const arr = stringToArray(e.target.value);
-                setValue("checklists", arr);
-              }}
-              placeholder="e.g., HSC Pass, Medical Certificate"
-            />
-          </div>
+          {renderListField(
+            "Checklists",
+            "checklists",
+            "e.g., HSC Pass",
+            checklistInput,
+            setChecklistInput
+          )}
 
           {/* Career Opportunities */}
-          <div className="space-y-2">
-            <Label htmlFor="edit-career">
-              Career Opportunities (comma separated)
-            </Label>
-            <Input
-              id="edit-career"
-              defaultValue={arrayToString(watch("careerOpportunities") || [])}
-              onBlur={(e) => {
-                const arr = stringToArray(e.target.value);
-                setValue("careerOpportunities", arr);
-              }}
-              placeholder="e.g., Commercial Pilot, Flight Instructor"
-            />
-          </div>
+          {renderListField(
+            "Career Opportunities",
+            "careerOpportunities",
+            "e.g., Commercial Pilot",
+            careerInput,
+            setCareerInput
+          )}
 
           {/* Available Shifts */}
-          <div className="space-y-2">
-            <Label htmlFor="edit-shifts">Available Shifts (comma separated)</Label>
-            <Input
-              id="edit-shifts"
-              defaultValue={arrayToString(watch("availableShifts") || [])}
-              onBlur={(e) => {
-                const arr = stringToArray(e.target.value);
-                setValue("availableShifts", arr);
-              }}
-              placeholder="e.g., Morning, Evening"
-            />
-          </div>
+          {renderListField(
+            "Available Shifts",
+            "availableShifts",
+            "e.g., Morning",
+            shiftInput,
+            setShiftInput
+          )}
 
           {/* Switches */}
           <div className="grid grid-cols-2 gap-4">

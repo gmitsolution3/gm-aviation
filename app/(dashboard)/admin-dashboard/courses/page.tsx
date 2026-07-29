@@ -35,6 +35,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useDelete } from "@/hooks/swr/useDelete";
 import { useFetch } from "@/hooks/swr/useFetch";
+import { useDebounce } from "@/hooks/useDebounce";
 import { ICourse, IPagination } from "@/types";
 import { formatDate, formatCurrency } from "@/utils";
 import {
@@ -53,12 +54,11 @@ import {
   Trash2,
   Clock,
   DollarSign,
-  CheckCircle,
-  XCircle,
   Star,
   BookOpen,
+  X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 
 interface ApiResponse {
@@ -74,6 +74,7 @@ export default function CoursesPage() {
   // Search & sort state
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("createdAt");
+  const debouncedSearch = useDebounce(searchTerm, 500);
 
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -82,12 +83,17 @@ export default function CoursesPage() {
   const [selectedItem, setSelectedItem] = useState<ICourse | null>(null);
   const [itemToEdit, setItemToEdit] = useState<ICourse | null>(null);
 
+  // Reset page when search or sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, sortBy]);
+
   // Build query string
   const queryParams = new URLSearchParams({
     page: String(currentPage),
     limit: String(limit),
     sortBy,
-    ...(searchTerm && { searchTerm }),
+    ...(debouncedSearch && { searchTerm: debouncedSearch }),
   }).toString();
 
   const { data, isLoading, refetch } = useFetch<ApiResponse>(
@@ -159,11 +165,19 @@ export default function CoursesPage() {
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1);
+  };
+
+  const clearSearch = () => {
+    setSearchTerm("");
   };
 
   const handleSortChange = (value: string) => {
     setSortBy(value);
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setSortBy("createdAt");
     setCurrentPage(1);
   };
 
@@ -313,6 +327,8 @@ export default function CoursesPage() {
   const currentPageNum = meta?.page || 1;
   const isDataAvailable = (data?.data?.length ?? 0) > 0;
 
+  const hasActiveFilters = searchTerm || sortBy !== "createdAt";
+
   if (isLoading) return <TableLoader />;
 
   return (
@@ -339,7 +355,7 @@ export default function CoursesPage() {
         </Button>
       </div>
 
-      {/* Toolbar: search left, sort right */}
+      {/* Toolbar: search left, sort + clear on right */}
       <div className="flex flex-wrap items-center justify-between mb-6">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -347,9 +363,18 @@ export default function CoursesPage() {
             placeholder="Search by title..."
             value={searchTerm}
             onChange={handleSearch}
-            className="pl-8"
+            className="pl-8 pr-9"
             disabled={isDeleting}
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2 mt-2 sm:mt-0">
           <SortAsc className="h-4 w-4 text-muted-foreground" />
@@ -370,6 +395,17 @@ export default function CoursesPage() {
               <SelectItem value="-fee">Fee (high to low)</SelectItem>
             </SelectContent>
           </Select>
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAllFilters}
+              className="h-9 px-3 text-muted-foreground hover:text-foreground"
+              disabled={isDeleting}
+            >
+              Clear all
+            </Button>
+          )}
         </div>
       </div>
 

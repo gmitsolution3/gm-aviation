@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { useDelete } from "@/hooks/swr/useDelete";
 import { useFetch } from "@/hooks/swr/useFetch";
+import { useDebounce } from "@/hooks/useDebounce";
 import { ICategory, IPagination } from "@/types";
 import { formatDate } from "@/utils";
 import {
@@ -50,8 +51,9 @@ import {
   Search,
   SortAsc,
   Trash2,
+  X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 
 interface ApiResponse {
@@ -67,28 +69,30 @@ export default function AdminCategoriesPage() {
   // Search & sort state
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("createdAt");
+  const debouncedSearch = useDebounce(searchTerm, 500);
 
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<ICategory | null>(
-    null,
-  );
-  const [itemToEdit, setItemToEdit] = useState<ICategory | null>(
-    null,
-  );
+  const [selectedItem, setSelectedItem] = useState<ICategory | null>(null);
+  const [itemToEdit, setItemToEdit] = useState<ICategory | null>(null);
+
+  // Reset page when search or sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, sortBy]);
 
   // Build query string
   const queryParams = new URLSearchParams({
     page: String(currentPage),
     limit: String(limit),
     sortBy,
-    ...(searchTerm && { searchTerm }),
+    ...(debouncedSearch && { searchTerm: debouncedSearch }),
   }).toString();
 
   const { data, isLoading, refetch } = useFetch<ApiResponse>(
-    `/categories?${queryParams}`,
+    `/categories?${queryParams}`
   );
 
   // Delete hook
@@ -96,7 +100,7 @@ export default function AdminCategoriesPage() {
     "/categories",
     {
       revalidateKey: "/categories",
-    },
+    }
   );
 
   // Handlers
@@ -146,9 +150,7 @@ export default function AdminCategoriesPage() {
         } catch (error: any) {
           Swal.fire({
             title: "Error",
-            text:
-              error.response?.data?.message ||
-              "Failed to delete category",
+            text: error.response?.data?.message || "Failed to delete category",
             icon: "error",
           });
         }
@@ -158,11 +160,19 @@ export default function AdminCategoriesPage() {
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1);
+  };
+
+  const clearSearch = () => {
+    setSearchTerm("");
   };
 
   const handleSortChange = (value: string) => {
     setSortBy(value);
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setSortBy("createdAt");
     setCurrentPage(1);
   };
 
@@ -183,9 +193,7 @@ export default function AdminCategoriesPage() {
             <span className="text-lg">📁</span>
           </div>
           <div>
-            <div className="font-semibold">
-              {row.getValue("name")}
-            </div>
+            <div className="font-semibold">{row.getValue("name")}</div>
             <div className="text-xs text-muted-foreground">
               slug: {row.original.slug}
             </div>
@@ -275,6 +283,8 @@ export default function AdminCategoriesPage() {
   const currentPageNum = meta?.page || 1;
   const isDataAvailable = (data?.data?.length ?? 0) > 0;
 
+  const hasActiveFilters = searchTerm || sortBy !== "createdAt";
+
   if (isLoading) return <TableLoader />;
 
   return (
@@ -288,8 +298,7 @@ export default function AdminCategoriesPage() {
           </p>
           {meta && (
             <p className="text-sm text-muted-foreground mt-1">
-              Showing {data?.data?.length || 0} of {meta.total}{" "}
-              categories
+              Showing {data?.data?.length || 0} of {meta.total} categories
             </p>
           )}
         </div>
@@ -302,7 +311,7 @@ export default function AdminCategoriesPage() {
         </Button>
       </div>
 
-      {/* Toolbar: search left, sort right */}
+      {/* Toolbar: search left, sort + clear on right */}
       <div className="flex flex-wrap items-center justify-between mb-6">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -310,9 +319,18 @@ export default function AdminCategoriesPage() {
             placeholder="Search by name..."
             value={searchTerm}
             onChange={handleSearch}
-            className="pl-8"
+            className="pl-8 pr-9"
             disabled={isDeleting}
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2 mt-2 sm:mt-0">
           <SortAsc className="h-4 w-4 text-muted-foreground" />
@@ -325,24 +343,29 @@ export default function AdminCategoriesPage() {
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="createdAt">
-                Created (newest)
-              </SelectItem>
-              <SelectItem value="-createdAt">
-                Created (oldest)
-              </SelectItem>
+              <SelectItem value="createdAt">Created (newest)</SelectItem>
+              <SelectItem value="-createdAt">Created (oldest)</SelectItem>
               <SelectItem value="name">Name A–Z</SelectItem>
               <SelectItem value="-name">Name Z–A</SelectItem>
             </SelectContent>
           </Select>
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAllFilters}
+              className="h-9 px-3 text-muted-foreground hover:text-foreground"
+              disabled={isDeleting}
+            >
+              Clear all
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Table / Empty state */}
       {!isDataAvailable ? (
-        <CategoryEmpty
-          onCreateClick={() => setIsCreateModalOpen(true)}
-        />
+        <CategoryEmpty onCreateClick={() => setIsCreateModalOpen(true)} />
       ) : (
         <Card className="overflow-hidden border shadow-sm p-0">
           <div className="overflow-x-auto">
@@ -359,7 +382,7 @@ export default function AdminCategoriesPage() {
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext(),
+                              header.getContext()
                             )}
                       </th>
                     ))}
@@ -376,7 +399,7 @@ export default function AdminCategoriesPage() {
                       <td key={cell.id} className="px-6 py-4">
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext(),
+                          cell.getContext()
                         )}
                       </td>
                     ))}
@@ -389,7 +412,6 @@ export default function AdminCategoriesPage() {
       )}
 
       {/* Pagination */}
-
       {isDataAvailable && (
         <div className="flex items-center justify-between mt-4 w-full">
           <div className="flex items-center gap-2">
@@ -418,9 +440,7 @@ export default function AdminCategoriesPage() {
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() =>
-                      handlePageChange(currentPageNum - 1)
-                    }
+                    onClick={() => handlePageChange(currentPageNum - 1)}
                     className={
                       currentPageNum <= 1 || isDeleting
                         ? "pointer-events-none opacity-50"
@@ -459,7 +479,7 @@ export default function AdminCategoriesPage() {
                         </PaginationLink>
                       </PaginationItem>
                     );
-                  },
+                  }
                 )}
 
                 {totalPage > 5 && currentPageNum < totalPage - 2 && (
@@ -484,9 +504,7 @@ export default function AdminCategoriesPage() {
 
                 <PaginationItem>
                   <PaginationNext
-                    onClick={() =>
-                      handlePageChange(currentPageNum + 1)
-                    }
+                    onClick={() => handlePageChange(currentPageNum + 1)}
                     className={
                       currentPageNum >= totalPage || isDeleting
                         ? "pointer-events-none opacity-50"

@@ -16,10 +16,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 import { useFetch } from "@/hooks/swr/useFetch";
 import { ICategory } from "@/types";
 import Swal from "sweetalert2";
+import { useState } from "react";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -84,9 +93,44 @@ export default function CreateCourseModal({
     },
   });
 
+  // Local state for list input fields
+  const [checklistInput, setChecklistInput] = useState("");
+  const [careerInput, setCareerInput] = useState("");
+  const [shiftInput, setShiftInput] = useState("");
+
   const handleClose = () => {
     setIsModalOpen(false);
     reset();
+    setChecklistInput("");
+    setCareerInput("");
+    setShiftInput("");
+  };
+
+  // Helper to add an item to a list
+  const addItem = (field: "checklists" | "careerOpportunities" | "availableShifts", value: string) => {
+    if (!value.trim()) return;
+    const current = watch(field) || [];
+    if (current.includes(value.trim())) {
+      Swal.fire({
+        icon: "warning",
+        title: "Duplicate",
+        text: `"${value.trim()}" already exists.`,
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      return;
+    }
+    setValue(field, [...current, value.trim()]);
+    // Clear the input
+    if (field === "checklists") setChecklistInput("");
+    else if (field === "careerOpportunities") setCareerInput("");
+    else if (field === "availableShifts") setShiftInput("");
+  };
+
+  // Helper to remove an item from a list
+  const removeItem = (field: "checklists" | "careerOpportunities" | "availableShifts", index: number) => {
+    const current = watch(field) || [];
+    setValue(field, current.filter((_, i) => i !== index));
   };
 
   const onSubmit = async (data: FormValues) => {
@@ -96,6 +140,9 @@ export default function CreateCourseModal({
         setIsModalOpen(false);
         reset();
         onSuccess?.();
+        setChecklistInput("");
+        setCareerInput("");
+        setShiftInput("");
         await Swal.fire({
           icon: "success",
           title: "Success!",
@@ -113,6 +160,61 @@ export default function CreateCourseModal({
     }
   };
 
+  // Helper to render a list field with add/remove
+  const renderListField = (
+    label: string,
+    field: "checklists" | "careerOpportunities" | "availableShifts",
+    placeholder: string,
+    inputValue: string,
+    setInput: (v: string) => void
+  ) => {
+    const items = watch(field) || [];
+
+    return (
+      <div className="space-y-2">
+        <Label>{label}</Label>
+        <div className="flex gap-2">
+          <Input
+            value={inputValue}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={placeholder}
+            className="flex-1"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addItem(field, inputValue);
+              }
+            }}
+          />
+          <Button
+            type="button"
+            variant="default"
+            onClick={() => addItem(field, inputValue)}
+            disabled={!inputValue.trim()}
+          >
+            Add
+          </Button>
+        </div>
+        {items.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {items.map((item, index) => (
+              <Badge key={index} variant="secondary" className="flex items-center gap-1 px-3 py-1">
+                {item}
+                <button
+                  type="button"
+                  onClick={() => removeItem(field, index)}
+                  className="ml-1 hover:text-destructive"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Dialog open={isModalOpen} onOpenChange={handleClose}>
       <DialogContent className="!max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -126,7 +228,9 @@ export default function CreateCourseModal({
           <div className="space-y-2">
             <Label htmlFor="title">Title *</Label>
             <Input id="title" {...register("title")} />
-            {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+            {errors.title && (
+              <p className="text-sm text-destructive">{errors.title.message}</p>
+            )}
           </div>
 
           {/* Category */}
@@ -147,7 +251,9 @@ export default function CreateCourseModal({
                 ))}
               </SelectContent>
             </Select>
-            {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
+            {errors.category && (
+              <p className="text-sm text-destructive">{errors.category.message}</p>
+            )}
           </div>
 
           {/* Description */}
@@ -159,15 +265,25 @@ export default function CreateCourseModal({
           {/* Image URL */}
           <div className="space-y-2">
             <Label htmlFor="image">Image URL</Label>
-            <Input id="image" {...register("image")} placeholder="https://..." />
-            {errors.image && <p className="text-sm text-destructive">{errors.image.message}</p>}
+            <Input
+              id="image"
+              {...register("image")}
+              placeholder="https://..."
+            />
+            {errors.image && (
+              <p className="text-sm text-destructive">{errors.image.message}</p>
+            )}
           </div>
 
           {/* Duration & Fee */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="duration">Duration</Label>
-              <Input id="duration" {...register("duration")} placeholder="e.g., 6 Months" />
+              <Input
+                id="duration"
+                {...register("duration")}
+                placeholder="e.g., 6 Months"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="fee">Fee ($)</Label>
@@ -176,60 +292,47 @@ export default function CreateCourseModal({
                 type="number"
                 {...register("fee", { valueAsNumber: true })}
               />
-              {errors.fee && <p className="text-sm text-destructive">{errors.fee.message}</p>}
+              {errors.fee && (
+                <p className="text-sm text-destructive">{errors.fee.message}</p>
+              )}
             </div>
           </div>
 
-          {/* Checklists, Career Opportunities, Shifts - you can add dynamic fields */}
-          {/* For simplicity, we'll use comma-separated inputs */}
-          <div className="space-y-2">
-            <Label htmlFor="checklists">Checklists (comma separated)</Label>
-            <Input
-              id="checklists"
-              placeholder="e.g., HSC Pass, Medical Certificate"
-              onChange={(e) =>
-                setValue(
-                  "checklists",
-                  e.target.value.split(",").map((s) => s.trim())
-                )
-              }
-            />
-          </div>
+          {/* Checklists */}
+          {renderListField(
+            "Checklists",
+            "checklists",
+            "e.g., HSC Pass",
+            checklistInput,
+            setChecklistInput
+          )}
 
-          <div className="space-y-2">
-            <Label htmlFor="careerOpportunities">Career Opportunities (comma separated)</Label>
-            <Input
-              id="careerOpportunities"
-              placeholder="e.g., Commercial Pilot, Flight Instructor"
-              onChange={(e) =>
-                setValue(
-                  "careerOpportunities",
-                  e.target.value.split(",").map((s) => s.trim())
-                )
-              }
-            />
-          </div>
+          {/* Career Opportunities */}
+          {renderListField(
+            "Career Opportunities",
+            "careerOpportunities",
+            "e.g., Commercial Pilot",
+            careerInput,
+            setCareerInput
+          )}
 
-          <div className="space-y-2">
-            <Label htmlFor="availableShifts">Available Shifts (comma separated)</Label>
-            <Input
-              id="availableShifts"
-              placeholder="e.g., Morning, Evening"
-              onChange={(e) =>
-                setValue(
-                  "availableShifts",
-                  e.target.value.split(",").map((s) => s.trim())
-                )
-              }
-            />
-          </div>
+          {/* Available Shifts */}
+          {renderListField(
+            "Available Shifts",
+            "availableShifts",
+            "e.g., Morning",
+            shiftInput,
+            setShiftInput
+          )}
 
           {/* Switches */}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center gap-2">
               <Switch
                 checked={watch("isAdmissionOpen")}
-                onCheckedChange={(checked) => setValue("isAdmissionOpen", checked)}
+                onCheckedChange={(checked) =>
+                  setValue("isAdmissionOpen", checked)
+                }
               />
               <Label>Admission Open</Label>
             </div>
