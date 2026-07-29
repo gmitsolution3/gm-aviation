@@ -2,12 +2,8 @@ import { DashboardMenu } from "@/utils";
 import {
   CircleUser,
   LayoutDashboard,
+  Plane,
   Settings,
-  UserRoundSearch,
-  List,
-  Earth,
-  Banknote,
-  Plane
 } from "lucide-react";
 
 const baseDashboardUrl = "/dashboard";
@@ -20,10 +16,15 @@ export const mainMenuItems = [
     icon: LayoutDashboard,
   },
   {
-      title: "Bookings",
-      url: dashboardMenu.defineUrl("/bookings"),
-      icon: Plane,
-    }
+    title: "Enrollments",
+    url: dashboardMenu.defineUrl("/enrollments"),
+    icon: Plane,
+  },
+  {
+    title: "Certificates",
+    url: dashboardMenu.defineUrl("/bookings"),
+    icon: Plane,
+  },
 ];
 
 export const settingsItems = [
