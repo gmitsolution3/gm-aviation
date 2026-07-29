@@ -31,16 +31,17 @@ import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
 import * as z from "zod";
 
+// 👇 Updated schema: all fields required (no .optional())
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
   category: z.string().min(1, "Category is required"),
-  description: z.string().optional(),
-  image: z.string().url("Must be a valid URL").optional(),
-  duration: z.string().optional(),
+  description: z.string().min(1, "Description is required"), // now required
+  image: z.string().min(1, "Image is required").url("Must be a valid URL"), // now required
+  duration: z.string().min(1, "Duration is required"), // now required
   fee: z.number().min(0, "Fee must be a positive number"),
-  checklists: z.array(z.string()),
-  careerOpportunities: z.array(z.string()),
-  availableShifts: z.array(z.string()),
+  checklists: z.array(z.string()).min(1, "At least one checklist item is required"),
+  careerOpportunities: z.array(z.string()).min(1, "At least one career opportunity is required"),
+  availableShifts: z.array(z.string()).min(1, "At least one shift is required"),
   isAdmissionOpen: z.boolean(),
   isFeatured: z.boolean(),
   isPublished: z.boolean(),
@@ -121,7 +122,6 @@ export default function EditCourseModal({
     }
   }, [course, reset]);
 
-
   const handleImageChange = (url: string, publicId: string) => {
     setValue("image", url, { shouldValidate: true });
   };
@@ -152,7 +152,8 @@ export default function EditCourseModal({
       });
       return;
     }
-    setValue(field, [...current, value.trim()]);
+    const newArray = [...current, value.trim()];
+    setValue(field, newArray, { shouldValidate: true }); // trigger validation
     // Clear the corresponding input
     if (field === "checklists") setChecklistInput("");
     else if (field === "careerOpportunities") setCareerInput("");
@@ -165,7 +166,8 @@ export default function EditCourseModal({
     index: number
   ) => {
     const current = watch(field) || [];
-    setValue(field, current.filter((_, i) => i !== index));
+    const newArray = current.filter((_, i) => i !== index);
+    setValue(field, newArray, { shouldValidate: true }); // trigger validation
   };
 
   const onSubmit = async (data: FormValues) => {
@@ -198,7 +200,7 @@ export default function EditCourseModal({
 
   if (!course) return null;
 
-  // Helper to render a list field with add/remove
+  // Helper to render a list field with add/remove and error display
   const renderListField = (
     label: string,
     field: "checklists" | "careerOpportunities" | "availableShifts",
@@ -207,10 +209,11 @@ export default function EditCourseModal({
     setInput: (v: string) => void
   ) => {
     const items = watch(field) || [];
+    const error = errors[field];
 
     return (
       <div className="space-y-2">
-        <Label>{label}</Label>
+        <Label>{label} *</Label>
         <div className="flex gap-2">
           <Input
             value={inputValue}
@@ -249,6 +252,7 @@ export default function EditCourseModal({
             ))}
           </div>
         )}
+        {error && <p className="text-sm text-destructive">{error.message}</p>}
       </div>
     );
   };
@@ -301,13 +305,16 @@ export default function EditCourseModal({
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="edit-description">Description</Label>
+            <Label htmlFor="edit-description">Description *</Label>
             <Textarea id="edit-description" {...register("description")} />
+            {errors.description && (
+              <p className="text-sm text-destructive">{errors.description.message}</p>
+            )}
           </div>
 
-          {/* 👇 REPLACED: Image URL input with ImageUploader */}
+          {/* Image */}
           <div className="space-y-2">
-            <Label>Course Image</Label>
+            <Label>Course Image *</Label>
             <ImageUploader
               value={watch("image")}
               onChange={handleImageChange}
@@ -320,15 +327,18 @@ export default function EditCourseModal({
           {/* Duration & Fee */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-duration">Duration</Label>
+              <Label htmlFor="edit-duration">Duration *</Label>
               <Input
                 id="edit-duration"
                 {...register("duration")}
                 placeholder="e.g., 6 Months"
               />
+              {errors.duration && (
+                <p className="text-sm text-destructive">{errors.duration.message}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-fee">Fee ($)</Label>
+              <Label htmlFor="edit-fee">Fee ($) *</Label>
               <Input
                 id="edit-fee"
                 type="number"

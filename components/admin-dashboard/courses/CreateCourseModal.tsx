@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ImageUploader } from "@/components/image-uploader"; // 👈 NEW
+import { ImageUploader } from "@/components/image-uploader";
 import { X } from "lucide-react";
 import { useFetch } from "@/hooks/swr/useFetch";
 import { ICategory } from "@/types";
@@ -34,13 +34,14 @@ import { useState } from "react";
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
   category: z.string().min(1, "Category is required"),
-  description: z.string().optional(),
-  image: z.string().url("Must be a valid URL").optional(),
-  duration: z.string().optional(),
+  description: z.string().min(1, "Description is required"),
+  image: z.string().min(1, "Image is required").url("Must be a valid URL"),
+  duration: z.string().min(1, "Duration is required"),
   fee: z.number().min(0, "Fee must be a positive number"),
-  checklists: z.array(z.string()),
-  careerOpportunities: z.array(z.string()),
-  availableShifts: z.array(z.string()),
+  // 👇 Updated: require at least one item
+  checklists: z.array(z.string()).min(1, "At least one checklist item is required"),
+  careerOpportunities: z.array(z.string()).min(1, "At least one career opportunity is required"),
+  availableShifts: z.array(z.string()).min(1, "At least one shift is required"),
   isAdmissionOpen: z.boolean(),
   isFeatured: z.boolean(),
   isPublished: z.boolean(),
@@ -107,13 +108,10 @@ export default function CreateCourseModal({
     setShiftInput("");
   };
 
-  // 👇 NEW: Handler for image upload
   const handleImageChange = (url: string, publicId: string) => {
     setValue("image", url, { shouldValidate: true });
-    // If you need to store publicId, add it to schema; otherwise ignore.
   };
 
-  // Helper to add an item to a list
   const addItem = (field: "checklists" | "careerOpportunities" | "availableShifts", value: string) => {
     if (!value.trim()) return;
     const current = watch(field) || [];
@@ -128,16 +126,24 @@ export default function CreateCourseModal({
       return;
     }
     setValue(field, [...current, value.trim()]);
-    // Clear the input
-    if (field === "checklists") setChecklistInput("");
-    else if (field === "careerOpportunities") setCareerInput("");
-    else if (field === "availableShifts") setShiftInput("");
+    // Clear the input and trigger validation for the array field
+    if (field === "checklists") {
+      setChecklistInput("");
+      // Manually trigger validation for the field
+      setValue(field, [...current, value.trim()], { shouldValidate: true });
+    } else if (field === "careerOpportunities") {
+      setCareerInput("");
+      setValue(field, [...current, value.trim()], { shouldValidate: true });
+    } else if (field === "availableShifts") {
+      setShiftInput("");
+      setValue(field, [...current, value.trim()], { shouldValidate: true });
+    }
   };
 
-  // Helper to remove an item from a list
   const removeItem = (field: "checklists" | "careerOpportunities" | "availableShifts", index: number) => {
     const current = watch(field) || [];
-    setValue(field, current.filter((_, i) => i !== index));
+    const newArray = current.filter((_, i) => i !== index);
+    setValue(field, newArray, { shouldValidate: true });
   };
 
   const onSubmit = async (data: FormValues) => {
@@ -167,7 +173,7 @@ export default function CreateCourseModal({
     }
   };
 
-  // Helper to render a list field with add/remove
+  // Helper to render a list field with add/remove and error display
   const renderListField = (
     label: string,
     field: "checklists" | "careerOpportunities" | "availableShifts",
@@ -176,6 +182,7 @@ export default function CreateCourseModal({
     setInput: (v: string) => void
   ) => {
     const items = watch(field) || [];
+    const error = errors[field];
 
     return (
       <div className="space-y-2">
@@ -218,12 +225,15 @@ export default function CreateCourseModal({
             ))}
           </div>
         )}
+        {error && (
+          <p className="text-sm text-destructive">{error.message}</p>
+        )}
       </div>
     );
   };
 
   return (
-    <Dialog open={isModalOpen} onOpenChange={handleClose}>
+    <Dialog modal={false} open={isModalOpen} onOpenChange={handleClose}>
       <DialogContent className="!max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Course</DialogTitle>
@@ -231,7 +241,6 @@ export default function CreateCourseModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Title */}
           <div className="space-y-2">
             <Label htmlFor="title">Title *</Label>
             <Input id="title" {...register("title")} />
@@ -240,7 +249,6 @@ export default function CreateCourseModal({
             )}
           </div>
 
-          {/* Category */}
           <div className="space-y-2">
             <Label htmlFor="category">Category *</Label>
             <Select
@@ -263,15 +271,16 @@ export default function CreateCourseModal({
             )}
           </div>
 
-          {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">Description *</Label>
             <Textarea id="description" {...register("description")} />
+            {errors.description && (
+              <p className="text-sm text-destructive">{errors.description.message}</p>
+            )}
           </div>
 
-          {/* 👇 REPLACED: Image URL input with ImageUploader */}
           <div className="space-y-2">
-            <Label>Course Image</Label>
+            <Label>Course Image *</Label>
             <ImageUploader
               value={watch("image")}
               onChange={handleImageChange}
@@ -281,18 +290,20 @@ export default function CreateCourseModal({
             )}
           </div>
 
-          {/* Duration & Fee */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="duration">Duration</Label>
+              <Label htmlFor="duration">Duration *</Label>
               <Input
                 id="duration"
                 {...register("duration")}
                 placeholder="e.g., 6 Months"
               />
+              {errors.duration && (
+                <p className="text-sm text-destructive">{errors.duration.message}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="fee">Fee ($)</Label>
+              <Label htmlFor="fee">Fee ($) *</Label>
               <Input
                 id="fee"
                 type="number"
@@ -306,7 +317,7 @@ export default function CreateCourseModal({
 
           {/* Checklists */}
           {renderListField(
-            "Checklists",
+            "Checklists *",
             "checklists",
             "e.g., HSC Pass",
             checklistInput,
@@ -315,7 +326,7 @@ export default function CreateCourseModal({
 
           {/* Career Opportunities */}
           {renderListField(
-            "Career Opportunities",
+            "Career Opportunities *",
             "careerOpportunities",
             "e.g., Commercial Pilot",
             careerInput,
@@ -324,14 +335,13 @@ export default function CreateCourseModal({
 
           {/* Available Shifts */}
           {renderListField(
-            "Available Shifts",
+            "Available Shifts *",
             "availableShifts",
             "e.g., Morning",
             shiftInput,
             setShiftInput
           )}
 
-          {/* Switches */}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center gap-2">
               <Switch
