@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Plane,
   Settings,
+  Award
 } from "lucide-react";
 
 const baseDashboardUrl = "/dashboard";
@@ -22,8 +23,8 @@ export const mainMenuItems = [
   },
   {
     title: "Certificates",
-    url: dashboardMenu.defineUrl("/bookings"),
-    icon: Plane,
+    url: dashboardMenu.defineUrl("/certificates"),
+    icon: Award,
   },
 ];
 
