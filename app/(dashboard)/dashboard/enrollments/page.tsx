@@ -11,8 +11,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useFetch } from "@/hooks/swr/useFetch";
+import { usePost } from "@/hooks/swr/usePost"; 
 import { useSession } from "@/lib/auth-context";
-import { ICourse } from "@/types";
+import { ICourse, IEnrollment } from "@/types";
 import { formatDate, formatCurrency } from "@/utils";
 import {
   BookOpen,
@@ -43,6 +44,13 @@ interface ApiResponse {
   data: ICourse[];
 }
 
+interface EnrollmentsResponse {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: IEnrollment[];
+}
+
 export default function Courses() {
   const { session } = useSession();
   const userId = session?.user?.id;
@@ -51,8 +59,32 @@ export default function Courses() {
   const [selectedCourse, setSelectedCourse] = useState<ICourse | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Fetch enrolled courses
   const { data, isLoading, isError } = useFetch<ApiResponse>(
     userId ? `/courses/user/${userId}` : null
+  );
+
+  // Fetch enrollments to get enrollment ID for each course
+  const { data: enrollmentsData } = useFetch<EnrollmentsResponse>(
+    userId ? `/enrollments?user=${userId}` : null
+  );
+
+  // Create a map of courseId -> enrollmentId
+  const enrollmentMap = new Map<string, string>();
+  if (enrollmentsData?.data) {
+    enrollmentsData.data.forEach((enrollment) => {
+      if (enrollment.course?._id) {
+        enrollmentMap.set(enrollment.course._id, enrollment._id);
+      }
+    });
+  }
+
+  // Post hook for certificate issuance
+  const { mutate: postCertificate, isLoading: isPosting } = usePost(
+    "/certificates",
+    {
+      revalidateKey: "/certificates", // optional, adjust as needed
+    }
   );
 
   if (!userId) {
@@ -109,6 +141,16 @@ export default function Courses() {
   }
 
   const handleIssueCertificate = async (courseId: string, courseTitle: string) => {
+    const enrollmentId = enrollmentMap.get(courseId);
+    if (!enrollmentId) {
+      await Swal.fire({
+        icon: "error",
+        title: "Enrollment not found",
+        text: "Could not find an enrollment for this course.",
+      });
+      return;
+    }
+
     const result = await Swal.fire({
       title: "Issue Certificate?",
       text: `Generate a certificate for "${courseTitle}"?`,
@@ -121,22 +163,37 @@ export default function Courses() {
 
     if (result.isConfirmed) {
       try {
-        // Simulate API call – replace with actual endpoint
-        // await axios.post(`/courses/${courseId}/certificate`);
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        await Swal.fire({
-          icon: "success",
-          title: "Certificate Issued!",
-          text: "Your certificate has been generated and is ready to download.",
-          timer: 3000,
+        // Show loading
+        Swal.fire({
+          title: "Generating Certificate...",
+          text: "Please wait",
+          allowOutsideClick: false,
           showConfirmButton: false,
+          willOpen: () => {
+            Swal.showLoading();
+          },
         });
-      } catch (error) {
+
+        const response = await postCertificate({
+          enrollment: enrollmentId,
+        });
+
+        if (response.success) {
+          await Swal.fire({
+            icon: "success",
+            title: "Certificate Issued!",
+            text: "Your certificate has been generated and is ready to download.",
+            timer: 3000,
+            showConfirmButton: false,
+          });
+        } else {
+          throw new Error(response.message || "Failed to issue certificate");
+        }
+      } catch (error: any) {
         await Swal.fire({
           icon: "error",
           title: "Failed",
-          text: "Could not issue certificate. Please try again.",
+          text: error?.message || "Could not issue certificate. Please try again.",
         });
       }
     }
@@ -163,6 +220,7 @@ export default function Courses() {
             course={course}
             onIssueCertificate={handleIssueCertificate}
             onViewDetails={handleViewDetails}
+            isPosting={isPosting}
           />
         ))}
       </div>
@@ -182,10 +240,12 @@ function CourseCard({
   course,
   onIssueCertificate,
   onViewDetails,
+  isPosting,
 }: {
   course: ICourse;
   onIssueCertificate: (id: string, title: string) => void;
   onViewDetails: (course: ICourse) => void;
+  isPosting: boolean;
 }) {
   const isAdmissionOpen = course.isAdmissionOpen;
 
@@ -237,6 +297,7 @@ function CourseCard({
             variant="outline"
             className="text-primary border-primary/30 hover:bg-primary/10"
             onClick={() => onIssueCertificate(course._id, course.title)}
+            disabled={isPosting}
           >
             <Award className="h-4 w-4 mr-1" />
             Issue Certificate
@@ -255,7 +316,7 @@ function CourseCard({
   );
 }
 
-// Course Details Modal Component
+// Course Details Modal Component (unchanged)
 function CourseDetailsModal({
   isOpen,
   onClose,
