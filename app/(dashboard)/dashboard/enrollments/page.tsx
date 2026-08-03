@@ -211,6 +211,10 @@ export default function Courses() {
         <p className="text-muted-foreground mt-1">
           You are enrolled in {courses.length} course{courses.length > 1 ? "s" : ""}.
         </p>
+        {/* Instruction added here */}
+        <p className="text-sm text-muted-foreground mt-2 italic flex items-center gap-1">
+          <Award className="h-4 w-4" /> Complete course to get certificate
+        </p>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -235,7 +239,7 @@ export default function Courses() {
   );
 }
 
-// Course Card Component
+// Course Card Component (unchanged)
 function CourseCard({
   course,
   onIssueCertificate,
@@ -249,21 +253,48 @@ function CourseCard({
 }) {
   const isAdmissionOpen = course.isAdmissionOpen;
 
+  // Generate initials for fallback avatar if no image
+  const getInitials = (title: string) =>
+    title
+      .split(" ")
+      .slice(0, 2)
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase();
+
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg line-clamp-2">{course.title}</CardTitle>
-          <Badge variant={isAdmissionOpen ? "default" : "secondary"} className="shrink-0">
-            {isAdmissionOpen ? "Open" : "Closed"}
-          </Badge>
+    <Card className="group overflow-hidden border-0 bg-white shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col rounded-xl p-0">
+      {/* Image / Header */}
+      <div className="relative h-48 w-full overflow-hidden bg-gradient-to-br from-primary/80 to-primary">
+        {course.image ? (
+          <img
+            src={course.image}
+            alt={course.title}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-white/20">
+            <BookOpen className="h-16 w-16" />
+          </div>
+        )}
+        {/* Overlay gradient for readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        {/* Enrolled badge */}
+        <Badge className="absolute left-3 top-3 bg-green-500 text-white border-0 shadow-md">
+          <CheckCircle className="mr-1 h-3 w-3" /> Enrolled
+        </Badge>
+        {/* Title overlay at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <h3 className="text-lg font-bold text-white line-clamp-2 drop-shadow">
+            {course.title}
+          </h3>
         </div>
-      </CardHeader>
-      <CardContent className="flex-1 space-y-3">
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {course.description || "No description available"}
-        </p>
-        <div className="flex flex-wrap gap-3 text-sm">
+      </div>
+
+      {/* Content */}
+      <CardContent className="flex-1 space-y-3 p-4 pt-3">
+        {/* Info bar */}
+        <div className="flex flex-wrap items-center gap-3 text-sm">
           <div className="flex items-center gap-1 text-muted-foreground">
             <Clock className="h-4 w-4" />
             <span>{course.duration || "N/A"}</span>
@@ -272,43 +303,67 @@ function CourseCard({
             <DollarSign className="h-4 w-4" />
             <span>{formatCurrency(course.fee)}</span>
           </div>
+          <Badge
+            variant={isAdmissionOpen ? "default" : "secondary"}
+            className="ml-auto"
+          >
+            {isAdmissionOpen ? "Open" : "Closed"}
+          </Badge>
         </div>
-        <div className="flex flex-wrap gap-1">
-          {course.checklists?.slice(0, 3).map((item, idx) => (
-            <Badge key={idx} variant="outline" className="text-xs">
-              {item}
-            </Badge>
-          ))}
-          {course.checklists?.length > 3 && (
-            <Badge variant="outline" className="text-xs">
-              +{course.checklists.length - 3} more
-            </Badge>
-          )}
-        </div>
+
+        {/* Description */}
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {course.description || "No description available"}
+        </p>
+
+        {/* Checklists as chips */}
+        {course.checklists && course.checklists.length > 0 && (
+          <div className="flex flex-wrap gap-1 pt-1">
+            {course.checklists.slice(0, 3).map((item, idx) => (
+              <Badge
+                key={idx}
+                variant="secondary"
+                className="text-xs font-normal bg-muted/50"
+              >
+                {item}
+              </Badge>
+            ))}
+            {course.checklists.length > 3 && (
+              <Badge variant="secondary" className="text-xs font-normal">
+                +{course.checklists.length - 3} more
+              </Badge>
+            )}
+          </div>
+        )}
       </CardContent>
-      <CardFooter className="border-t pt-4 flex items-center justify-between gap-2 flex-wrap">
-        <div className="text-xs text-muted-foreground">
-          <Calendar className="h-3 w-3 inline mr-1" />
-          {formatDate(course.createdAt)}
+
+      {/* Footer */}
+      <CardFooter className="border-t bg-muted/10 p-4 flex flex-col gap-3">
+        <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            Enrolled {formatDate(course.createdAt)}
+          </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full gap-2">
           <Button
             size="sm"
-            variant="outline"
-            className="text-primary border-primary/30 hover:bg-primary/10"
+            variant="default"
+            className="flex-1 bg-primary hover:bg-primary/90 text-white"
             onClick={() => onIssueCertificate(course._id, course.title)}
             disabled={isPosting}
           >
-            <Award className="h-4 w-4 mr-1" />
-            Issue Certificate
+            <Award className="mr-1.5 h-4 w-4" />
+            Complete Course
           </Button>
           <Button
             size="sm"
             variant="outline"
+            className="flex-1"
             onClick={() => onViewDetails(course)}
           >
-            <ExternalLink className="h-4 w-4 mr-1" />
-            View Details
+            <ExternalLink className="mr-1.5 h-4 w-4" />
+            Details
           </Button>
         </div>
       </CardFooter>
