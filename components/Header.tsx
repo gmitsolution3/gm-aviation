@@ -15,6 +15,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useSession } from "@/lib/auth-context";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 
 const NAV_LINKS = [
   { label: "Home", href: "#home" },
@@ -29,6 +35,9 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+
+  const { session } = useSession();
+  const user = session?.user;
 
   const isHome = pathname === "/";
 
@@ -71,13 +80,29 @@ export default function Header() {
               Terminal Drive, Geneva International Airport
             </span>
           </div>
-          <Link
-            href="#admission"
-            className="flex items-center gap-1.5 font-semibold text-brand-accent transition-colors hover:text-white"
-          >
-            Apply Now
-            <ArrowRight className="size-4" aria-hidden="true" />
-          </Link>
+          {user ? (
+            <Link
+              href="/profile"
+              className="flex items-center gap-2 transition-colors hover:text-brand-accent"
+            >
+              <Avatar className="size-8">
+                {user.image && (
+                  <AvatarImage src={user.image} alt={user.name || "User"} />
+                )}
+                <AvatarFallback>
+                  {user.name?.[0] || user.email?.[0] || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="flex items-center gap-1.5 font-semibold text-brand-accent transition-colors hover:text-white"
+            >
+              Login / Register
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          )}
         </div>
       </div>
 
