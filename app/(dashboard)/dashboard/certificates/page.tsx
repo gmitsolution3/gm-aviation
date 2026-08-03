@@ -97,122 +97,166 @@ export default function CertificatesPage() {
       const userName = certificate?.user?.name || "Student";
       const courseTitle = certificate?.course?.title || "Course";
       const issueDate = formatDate(certificate.issuedAt || certificate.createdAt);
+      const certId = certificate.certificateNumber || certificate._id.slice(-10).toUpperCase();
+      // Optional course length, falls back gracefully if not present on the model
+      const courseHours = (certificate as any)?.course?.durationHours;
+      const instructorName = (certificate as any)?.course?.instructor?.name || "Course Director";
 
-      // Create a hidden container for the certificate
+      // Create a hidden container sized like a widescreen certificate (Udemy-style ratio)
       const container = document.createElement("div");
       container.style.position = "absolute";
       container.style.left = "-9999px";
       container.style.top = "0";
-      container.style.width = "900px";
-      container.style.padding = "50px";
-      container.style.background = "#f8f9fa";
-      container.style.fontFamily = "'Georgia', 'Times New Roman', serif";
-      container.style.borderRadius = "24px";
-      container.style.boxShadow = "0 20px 60px rgba(0,0,0,0.15)";
+      container.style.width = "1122px";
+      container.style.height = "793px";
+      container.style.background = "#FAF7F0";
+      container.style.fontFamily = "'Helvetica Neue', Arial, sans-serif";
 
-      // Certificate inner content
+      // Certificate inner content — navy / gold aviation theme, landscape layout
       container.innerHTML = `
         <div style="
-          background: white;
-          border: 6px solid #d4af37;
-          border-radius: 20px;
-          padding: 50px 40px;
-          box-shadow: inset 0 0 0 2px #f5e6c6;
           position: relative;
+          width: 100%;
+          height: 100%;
+          box-sizing: border-box;
+          background: #FAF7F0;
+          padding: 28px;
           overflow: hidden;
         ">
-          <!-- Decorative corner elements -->
-          <div style="position: absolute; top: 20px; left: 20px; width: 60px; height: 60px; border-top: 4px solid #d4af37; border-left: 4px solid #d4af37; border-radius: 8px 0 0 0;"></div>
-          <div style="position: absolute; top: 20px; right: 20px; width: 60px; height: 60px; border-top: 4px solid #d4af37; border-right: 4px solid #d4af37; border-radius: 0 8px 0 0;"></div>
-          <div style="position: absolute; bottom: 20px; left: 20px; width: 60px; height: 60px; border-bottom: 4px solid #d4af37; border-left: 4px solid #d4af37; border-radius: 0 0 0 8px;"></div>
-          <div style="position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px; border-bottom: 4px solid #d4af37; border-right: 4px solid #d4af37; border-radius: 0 0 8px 0;"></div>
-
-          <!-- Background watermark -->
-          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 200px; opacity: 0.04; color: #d4af37; font-weight: bold; letter-spacing: 20px; user-select: none;">GM</div>
-
-          <!-- Logo / Emblem -->
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div style="display: inline-block; background: #d4af37; border-radius: 50%; width: 70px; height: 70px; line-height: 70px; font-size: 36px; color: white; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);">🎓</div>
-          </div>
-
-          <h1 style="
-            font-size: 42px;
-            color: #1a2a3a;
-            text-align: center;
-            margin: 10px 0 5px;
-            letter-spacing: 4px;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-family: 'Georgia', serif;
-          ">Certificate of Completion</h1>
-
-          <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin: 15px 0 10px;">
-            <div style="flex: 1; height: 2px; background: linear-gradient(to right, transparent, #d4af37, transparent);"></div>
-            <div style="color: #d4af37; font-size: 24px;">✦</div>
-            <div style="flex: 1; height: 2px; background: linear-gradient(to right, transparent, #d4af37, transparent);"></div>
-          </div>
-
-          <p style="
-            font-size: 20px;
-            color: #5a6a7a;
-            text-align: center;
-            margin: 10px 0 5px;
-            letter-spacing: 2px;
-          ">This certifies that</p>
-
-          <h2 style="
-            font-size: 40px;
-            color: #1a2a3a;
-            text-align: center;
-            margin: 10px 0;
-            font-weight: 600;
-            font-family: 'Georgia', serif;
-            border-bottom: 2px dashed #d4af37;
-            display: inline-block;
-            padding: 0 30px 8px;
-          ">${userName}</h2>
-
-          <p style="
-            font-size: 20px;
-            color: #5a6a7a;
-            text-align: center;
-            margin: 15px 0 5px;
-            letter-spacing: 1px;
-          ">has successfully completed the course</p>
-
-          <h3 style="
-            font-size: 32px;
-            color: #2c3e6b;
-            text-align: center;
-            margin: 8px 0 15px;
-            font-weight: 600;
-            font-family: 'Georgia', serif;
-          ">${courseTitle}</h3>
-
-          <div style="display: flex; justify-content: center; gap: 30px; margin: 20px 0; font-size: 16px; color: #7a8a9a;">
-            <span>📅 Issued on <strong>${issueDate}</strong></span>
-            <span>🔖 Certificate ID: <strong>${certificate._id.slice(-8)}</strong></span>
-          </div>
-
+          <!-- Outer border frame -->
           <div style="
+            position: absolute;
+            inset: 28px;
+            border: 2px solid #C9A227;
+            border-radius: 2px;
+          "></div>
+          <div style="
+            position: absolute;
+            inset: 36px;
+            border: 1px solid #0B2545;
+            opacity: 0.25;
+          "></div>
+
+          <!-- Faint compass-rose watermark, right side -->
+          <svg width="420" height="420" viewBox="0 0 420 420" style="position: absolute; right: -60px; bottom: -60px; opacity: 0.05;">
+            <circle cx="210" cy="210" r="190" fill="none" stroke="#0B2545" stroke-width="2"/>
+            <circle cx="210" cy="210" r="140" fill="none" stroke="#0B2545" stroke-width="1"/>
+            <path d="M210 20 L226 200 L210 210 L194 200 Z" fill="#0B2545"/>
+            <path d="M210 400 L226 220 L210 210 L194 220 Z" fill="#0B2545"/>
+            <path d="M20 210 L200 194 L210 210 L200 226 Z" fill="#0B2545"/>
+            <path d="M400 210 L220 194 L210 210 L220 226 Z" fill="#0B2545"/>
+          </svg>
+
+          <!-- Header row: emblem + academy name (left), eyebrow (right) -->
+          <div style="
+            position: relative;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eaeef2;
+            justify-content: space-between;
+            padding: 20px 46px 0;
           ">
-            <div style="text-align: left;">
-              <p style="font-size: 14px; color: #9a9a9a; margin: 0;">Issued by</p>
-              <p style="font-size: 18px; font-weight: 600; color: #1a2a3a; margin: 2px 0;">GM Aviation Academy</p>
-            </div>
-            <div style="text-align: right;">
-              <p style="font-size: 14px; color: #9a9a9a; margin: 0;">Verified</p>
-              <div style="display: flex; align-items: center; gap: 8px; justify-content: flex-end;">
-                <span style="font-size: 24px;">✅</span>
-                <span style="font-size: 14px; font-weight: 500; color: #2c3e6b;">Official Seal</span>
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="
+                width: 46px; height: 46px; border-radius: 50%;
+                background: #0B2545; display: flex; align-items: center;
+                justify-content: center; flex-shrink: 0;
+              ">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                  <path d="M2 16l8.5-2.5L12 2l1.5 11.5L22 16l-8.5 1-1.5 5-1.5-5L2 16z" fill="#C9A227"/>
+                </svg>
+              </div>
+              <div>
+                <div style="font-size: 15px; font-weight: 700; color: #0B2545; letter-spacing: 1px;">GM AVIATION ACADEMY</div>
+                <div style="font-size: 10px; color: #5B6B79; letter-spacing: 2px; text-transform: uppercase;">Flight Training &amp; Ground School</div>
               </div>
             </div>
+            <div style="font-size: 11px; color: #5B6B79; letter-spacing: 3px; text-transform: uppercase;">
+              Est. Excellence in Aviation
+            </div>
+          </div>
+
+          <!-- Main content -->
+          <div style="position: relative; text-align: center; padding: 34px 90px 0;">
+            <div style="font-size: 13px; letter-spacing: 6px; color: #C9A227; font-weight: 700; text-transform: uppercase;">
+              Certificate of Completion
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: center; gap: 16px; margin: 18px 0 26px;">
+              <div style="width: 70px; height: 1px; background: #C9A227;"></div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#C9A227"><path d="M12 2l2.5 7.5H22l-6 4.5 2.3 7.5-6.3-4.6-6.3 4.6L7.5 14 1.5 9.5H9z"/></svg>
+              <div style="width: 70px; height: 1px; background: #C9A227;"></div>
+            </div>
+
+            <div style="font-size: 15px; color: #5B6B79; letter-spacing: 1px;">This is to certify that</div>
+
+            <div style="
+              font-family: Georgia, 'Times New Roman', serif;
+              font-size: 46px;
+              color: #0B2545;
+              margin: 14px 0 6px;
+              font-weight: 700;
+            ">${userName}</div>
+
+            <div style="width: 260px; height: 1px; background: #0B2545; opacity: 0.25; margin: 0 auto 22px;"></div>
+
+            <div style="font-size: 15px; color: #5B6B79; letter-spacing: 1px; line-height: 1.6;">
+              has successfully completed the course
+            </div>
+            <div style="
+              font-family: Georgia, 'Times New Roman', serif;
+              font-size: 26px;
+              color: #1E5F8C;
+              font-weight: 700;
+              margin: 8px 0 4px;
+            ">${courseTitle}</div>
+            ${courseHours ? `<div style="font-size: 13px; color: #5B6B79; letter-spacing: 0.5px;">${courseHours} hours of instruction</div>` : ""}
+          </div>
+
+          <!-- Footer row: date + signature (left), seal (center), cert id + issuer (right) -->
+          <div style="
+            position: absolute;
+            left: 70px;
+            right: 70px;
+            bottom: 66px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+          ">
+            <div style="text-align: center; width: 200px;">
+              <div style="font-family: Georgia, serif; font-size: 16px; color: #0B2545; border-bottom: 1px solid #0B2545; padding-bottom: 6px;">${issueDate}</div>
+              <div style="font-size: 10px; letter-spacing: 2px; color: #5B6B79; text-transform: uppercase; margin-top: 6px;">Date Issued</div>
+            </div>
+
+            <div style="text-align: center;">
+              <div style="
+                width: 84px; height: 84px; border-radius: 50%;
+                background: radial-gradient(circle at 35% 30%, #d9b84a, #C9A227 55%, #a5821b 100%);
+                display: flex; align-items: center; justify-content: center;
+                box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+                border: 3px solid #0B2545;
+              ">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                  <path d="M2 16l8.5-2.5L12 2l1.5 11.5L22 16l-8.5 1-1.5 5-1.5-5L2 16z" fill="#0B2545"/>
+                </svg>
+              </div>
+              <div style="font-size: 9px; letter-spacing: 1.5px; color: #5B6B79; text-transform: uppercase; margin-top: 6px;">Official Seal</div>
+            </div>
+
+            <div style="text-align: center; width: 200px;">
+              <div style="font-family: Georgia, serif; font-size: 16px; color: #0B2545; border-bottom: 1px solid #0B2545; padding-bottom: 6px;">${instructorName}</div>
+              <div style="font-size: 10px; letter-spacing: 2px; color: #5B6B79; text-transform: uppercase; margin-top: 6px;">Course Director</div>
+            </div>
+          </div>
+
+          <!-- Bottom strip: certificate id -->
+          <div style="
+            position: absolute;
+            left: 70px; right: 70px; bottom: 40px;
+            display: flex; justify-content: space-between;
+            font-size: 10px; color: #5B6B79; letter-spacing: 1px;
+          ">
+            <span>Certificate ID: <strong style="color:#0B2545;">${certId}</strong></span>
+            <span>Verify at gmaviationacademy.com/verify</span>
           </div>
         </div>
       `;
@@ -223,7 +267,7 @@ export default function CertificatesPage() {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: "#f8f9fa",
+        backgroundColor: "#FAF7F0",
       });
       document.body.removeChild(container);
 
@@ -267,7 +311,6 @@ export default function CertificatesPage() {
 }
 
 // Certificate Card Component
-// Certificate Card Component (redesigned)
 function CertificateCard({
   certificate,
   onGenerate,
