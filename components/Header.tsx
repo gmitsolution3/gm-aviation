@@ -1,6 +1,19 @@
 "use client";
 
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import useLogout from "@/hooks/useLogout";
+import { useSession } from "@/lib/auth-context";
 import {
   ArrowRight,
   Mail,
@@ -15,12 +28,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useSession } from "@/lib/auth-context";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
+
+import { roleRoute } from "@/utils/roleRoute";
 
 const NAV_LINKS = [
   { label: "Home", href: "#home" },
@@ -40,6 +49,8 @@ export default function Header() {
   const user = session?.user;
 
   const isHome = pathname === "/";
+
+  const { handleLogout } = useLogout();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -81,19 +92,43 @@ export default function Header() {
             </span>
           </div>
           {user ? (
-            <Link
-              href="/profile"
-              className="flex items-center gap-2 transition-colors hover:text-brand-accent"
-            >
-              <Avatar className="size-8">
-                {user.image && (
-                  <AvatarImage src={user.image} alt={user.name || "User"} />
-                )}
-                <AvatarFallback>
-                  {user.name?.[0] || user.email?.[0] || "U"}
-                </AvatarFallback>
-              </Avatar>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 transition-colors hover:text-brand-accent focus:outline-none">
+                  <Avatar className="size-8 ring-2 ring-primary ring-offset-2 ring-offset-brand-navy">
+                    {user.image && (
+                      <AvatarImage
+                        src={user.image}
+                        alt={user.name || "User"}
+                      />
+                    )}
+                    <AvatarFallback>
+                      {user.name?.[0] || user.email?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                sideOffset={8}
+                className="w-40"
+              >
+                <DropdownMenuItem asChild>
+                  <Link
+                    href={roleRoute(user?.role)}
+                    className="cursor-pointer"
+                  >
+                    Dashboard
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleLogout()}
+                  className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-600"
+                >
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Link
               href="/login"
@@ -151,14 +186,10 @@ export default function Header() {
 
           <div className="flex items-center gap-3">
             <Button
+              asChild
               className="hidden rounded-full bg-brand-accent px-6 font-semibold text-brand-navy hover:bg-brand-accent/90 lg:inline-flex"
-              onClick={() => {
-                document
-                  .querySelector("#admission")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
             >
-              Apply Now
+              <Link href="/courses">Apply Now</Link>
             </Button>
             <button
               type="button"
@@ -258,15 +289,10 @@ export default function Header() {
                   admissions@meridianaviation.edu
                 </Link>
                 <Button
+                  asChild
                   className="w-full rounded-full bg-brand-accent font-semibold text-brand-navy hover:bg-brand-accent/90"
-                  onClick={() => {
-                    setOpen(false);
-                    document
-                      .querySelector("#admission")
-                      ?.scrollIntoView({ behavior: "smooth" });
-                  }}
                 >
-                  Apply Now
+                  <Link href="/courses">Apply Now</Link>
                 </Button>
               </div>
             </motion.aside>

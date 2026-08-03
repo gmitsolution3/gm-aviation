@@ -29,8 +29,8 @@ import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 import { useSession } from "@/lib/auth-context";
 import { notify } from "@/utils";
+import { roleRoute } from "@/utils/roleRoute";
 import Image from "next/image";
-import { ROLE_ROUTE } from "@/utils/role-route";
 
 // Validation schema
 const loginSchema = z.object({
@@ -89,11 +89,7 @@ export default function Login() {
         const user = res.data.user;
         notify.success("Log in successful!");
 
-        router.push(
-          from ||
-            ROLE_ROUTE[user?.role as keyof typeof ROLE_ROUTE] ||
-            "/",
-        );
+        router.push(from || roleRoute(user?.role) || "/");
       } else {
         setServerError(res?.error?.message || "Login failed");
         notify.error(res?.error?.message || "Login failed");
@@ -154,7 +150,9 @@ export default function Login() {
                     disabled={isLoading}
                     {...register("email")}
                   />
-                  <FieldDescription>Enter your email address</FieldDescription>
+                  <FieldDescription>
+                    Enter your email address
+                  </FieldDescription>
                   {errors.email && (
                     <FieldError>{errors.email.message}</FieldError>
                   )}
@@ -187,7 +185,9 @@ export default function Login() {
                       )}
                     </Button>
                   </div>
-                  <FieldDescription>Enter your account password</FieldDescription>
+                  <FieldDescription>
+                    Enter your account password
+                  </FieldDescription>
                   {errors.password && (
                     <FieldError>{errors.password.message}</FieldError>
                   )}

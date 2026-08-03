@@ -1,4 +1,4 @@
-import { Link2Off, Mail, MapPin, Phone } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -98,12 +98,12 @@ export default function Footer() {
               <ul className="mt-5 space-y-3 text-sm">
                 {col.links.map((link) => (
                   <li key={link}>
-                    <Link2Off
+                    <Link
                       href="#"
                       className="transition-colors hover:text-brand-accent"
                     >
                       {link}
-                    </Link2Off>
+                    </Link>
                   </li>
                 ))}
               </ul>
