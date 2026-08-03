@@ -154,8 +154,8 @@ export const bloodGroupOptions = [
 ];
 
 export const defaultValues: FormValues = {
-  user: "6a5f5df8e6b2ec0da4b52805",
-  course: "6a6209fcf36a55708207e980",
+  user: "",
+  course: "",
   fullName: "",
   email: "",
   phone: "",

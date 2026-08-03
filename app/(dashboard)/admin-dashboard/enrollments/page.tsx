@@ -85,6 +85,8 @@ export default function EnrollmentsPage() {
     `/enrollments?${queryParams}`
   );
 
+  console.log(data)
+
   // Reset page when search or filter changes
   useEffect(() => {
     setCurrentPage(1);
@@ -136,6 +138,11 @@ export default function EnrollmentsPage() {
         icon: CheckCircle,
         label: "Completed",
       },
+      active: {
+        variant: "default",
+        icon: CheckCircle,
+        label: "Active",
+      },
       cancelled: {
         variant: "destructive",
         icon: XCircle,
@@ -179,10 +186,10 @@ export default function EnrollmentsPage() {
         return (
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-              {user.image ? (
+              {user?.image ? (
                 <img
-                  src={user.image}
-                  alt={user.name}
+                  src={user?.image}
+                  alt={user?.name}
                   className="w-full h-full object-cover"
                 />
               ) : (

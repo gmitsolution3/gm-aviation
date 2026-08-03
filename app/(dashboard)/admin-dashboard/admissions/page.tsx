@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { RevealItem, RevealStagger } from "@/components/Reveal";
+import TableLoader from "@/components/TableLoader";
+import AdmissionEmpty from "@/components/admin-dashboard/admissions/AdmissionEmpty";
+import ViewAdmissionModal from "@/components/admin-dashboard/admissions/ViewAdmissionModal";
+import ReviewAdmissionModal from "@/components/admin-dashboard/admissions/ReviewAdmissionModal"; // 👈 NEW
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Pagination,
   PaginationContent,
@@ -20,168 +23,455 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { useFetch } from "@/hooks/swr/useFetch";
-import { ICourse, IPagination } from "@/types";
-import { ArrowRight } from "lucide-react";
-import Link from "next/link";
-import SectionTitle from "@/components/SectionTitle";
-import CourseCard from "@/components/home/Courses/CourseCard";
-import CourseEmpty from "@/components/home/Courses/CourseEmpty";
-import CourseError from "@/components/home/Courses/CourseError";
-import CourseLoading from "@/components/home/Courses/CourseLoading";
+import { useDebounce } from "@/hooks/useDebounce";
+import { IAdmission } from "@/types";
+import { formatDate } from "@/utils";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import {
+  Calendar,
+  Eye,
+  Search,
+  Filter,
+  X,
+  User,
+  Mail,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  XCircle,
+  BookOpen,
+  ClipboardCheck,
+  MessageSquare, // 👈 NEW
+} from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface ApiResponse {
-  success: boolean;
-  statusCode: number;
-  message: string;
-  meta: IPagination;
-  data: ICourse[];
+  data: IAdmission[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPage: number;
+  };
 }
 
-const DEFAULT_LIMIT = 9;
-const LIMIT_OPTIONS = [6, 9, 12, 18, 24];
+export default function Admissions() {
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
-export default function CoursePage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  // Search & filter state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string>("");
+  const debouncedSearch = useDebounce(searchTerm, 500);
 
-  const pageParam = searchParams.get("page");
-  const limitParam = searchParams.get("limit");
+  // Modal states
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<IAdmission | null>(null);
+  const [itemToReview, setItemToReview] = useState<IAdmission | null>(null);
 
-  const [page, setPage] = useState(pageParam ? parseInt(pageParam) : 1);
-  const [limit, setLimit] = useState(
-    limitParam ? parseInt(limitParam) : DEFAULT_LIMIT
+  // Build query string
+  const queryParams = new URLSearchParams({
+    page: String(currentPage),
+    limit: String(limit),
+    ...(debouncedSearch && { searchTerm: debouncedSearch }),
+    ...(filterStatus && { status: filterStatus }),
+  }).toString();
+
+  const { data, isLoading, refetch } = useFetch<ApiResponse>(
+    `/admissions?${queryParams}`
   );
 
-  // Update URL when page or limit changes
+  // Reset page when search or filter changes
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (page > 1) params.set("page", page.toString());
-    if (limit !== DEFAULT_LIMIT) params.set("limit", limit.toString());
-    const queryString = params.toString();
-    router.push(`/courses${queryString ? `?${queryString}` : ""}`, {
-      scroll: false,
-    });
-  }, [page, limit, router]);
+    setCurrentPage(1);
+  }, [debouncedSearch, filterStatus]);
 
-  // Fetch courses with pagination
-  const { data, isLoading, isError, refetch } = useFetch<ApiResponse>(
-    `/courses?page=${page}&limit=${limit}`
-  );
-
-  const courses = data?.data || [];
-  const total = data?.meta?.total || 0;
-  const totalPages = Math.ceil(total / limit);
-
-  // Reset to first page when totalPages changes (e.g., after filter)
-  useEffect(() => {
-    if (page > totalPages && totalPages > 0) {
-      setPage(1);
-    }
-  }, [totalPages, page]);
-
-  const handlePageChange = (newPage: number) => {
-    if (newPage < 1 || newPage > totalPages) return;
-    setPage(newPage);
+  // Handlers
+  const handleView = (item: IAdmission) => {
+    setSelectedItem(item);
+    setIsDetailModalOpen(true);
   };
 
+  const handleReview = (item: IAdmission) => {
+    setItemToReview(item);
+    setIsReviewModalOpen(true);
+  };
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const clearSearch = () => {
+    setSearchTerm("");
+  };
+
+  const handleFilterChange = (value: string) => {
+    setFilterStatus(value);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilterStatus("");
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => setCurrentPage(page);
   const handleLimitChange = (newLimit: string) => {
-    setLimit(parseInt(newLimit));
-    setPage(1);
+    setLimit(Number(newLimit));
+    setCurrentPage(1);
   };
 
-  if (isLoading) {
-    return <CourseLoading />;
-  }
+  // Status badge helper
+  const getStatusBadge = (status: string) => {
+    const statusMap: Record<
+      string,
+      { variant: "default" | "secondary" | "destructive" | "outline"; icon: any; label: string }
+    > = {
+      submitted: {
+        variant: "secondary",
+        icon: Clock,
+        label: "Submitted",
+      },
+      "under-review": {
+        variant: "outline",
+        icon: AlertCircle,
+        label: "Under Review",
+      },
+      approved: {
+        variant: "default",
+        icon: CheckCircle,
+        label: "Approved",
+      },
+      rejected: {
+        variant: "destructive",
+        icon: XCircle,
+        label: "Rejected",
+      },
+    };
 
-  if (isError) {
-    return <CourseError refetch={refetch} />;
-  }
+    const statusInfo = statusMap[status.toLowerCase()] || statusMap.submitted;
+    const Icon = statusInfo.icon;
 
-  if (!courses.length) {
-    return <CourseEmpty />;
-  }
+    return (
+      <Badge variant={statusInfo.variant} className="gap-1 capitalize">
+        <Icon className="h-3 w-3" />
+        {statusInfo.label}
+      </Badge>
+    );
+  };
 
-  const startItem = (page - 1) * limit + 1;
-  const endItem = Math.min(page * limit, total);
+  // Table columns
+  const columns: ColumnDef<IAdmission>[] = [
+    {
+      accessorKey: "user",
+      header: "Applicant",
+      cell: ({ row }) => {
+        const user = row.original.user;
+        const personal = row.original.personalInformation;
+        return (
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <User className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <div className="font-semibold">
+                {personal?.fullName || user?.name || "N/A"}
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Mail className="h-3 w-3" />
+                {user?.email || personal?.email || "N/A"}
+              </div>
+              {personal?.phone && (
+                <div className="text-xs text-muted-foreground">
+                  {personal.phone}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "course",
+      header: "Course",
+      cell: ({ row }) => {
+        const course = row.original.course;
+        if (!course) return <span className="text-muted-foreground">—</span>;
+        return (
+          <div>
+            <div className="font-medium">{course.title}</div>
+            <div className="text-xs text-muted-foreground">
+              {course.duration}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => getStatusBadge(row.getValue("status")),
+    },
+    // 👇 NEW Review column
+    {
+      accessorKey: "review",
+      header: "Review",
+      cell: ({ row }) => {
+        const review = row.original.review;
+        if (review) {
+          return (
+            <div className="space-y-1">
+              <Badge variant="default" className="gap-1 bg-green-500 hover:bg-green-600">
+                <CheckCircle className="h-3 w-3" />
+                Reviewed
+              </Badge>
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <MessageSquare className="h-3 w-3" />
+                <span className="truncate max-w-[150px]" title={review.remark}>
+                  {review.remark || "No remark"}
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {formatDate(review.reviewedAt)}
+              </div>
+            </div>
+          );
+        }
+        return (
+          <Badge variant="secondary" className="gap-1">
+            <XCircle className="h-3 w-3" />
+            Not Reviewed
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "createdAt",
+      header: "Submitted",
+      cell: ({ row }) => (
+        <div className="flex items-center text-sm">
+          <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
+          {formatDate(row.getValue("createdAt"))}
+        </div>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:text-primary"
+            onClick={() => handleView(row.original)}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:text-primary"
+            onClick={() => handleReview(row.original)}
+          >
+            <ClipboardCheck className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  const table = useReactTable({
+    data: data?.data || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
+  const meta = data?.meta;
+  const totalPage = meta?.totalPage || 1;
+  const currentPageNum = meta?.page || 1;
+  const isDataAvailable = (data?.data?.length ?? 0) > 0;
+  const hasActiveFilters = searchTerm || filterStatus;
+
+  if (isLoading) return <TableLoader />;
 
   return (
-    <section id="courses" className="bg-white py-20 lg:py-28">
-      <div className="mx-auto max-w-[1440px] px-6">
-        <SectionTitle
-          eyebrow="Programs"
-          title="Courses designed for a global aviation career"
-          description="From your first solo flight to advanced airline certifications, choose the path that fits your ambition."
-        />
-
-        {/* Results info and limit selector */}
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">
-            Showing <span className="font-medium">{startItem}</span> –{" "}
-            <span className="font-medium">{endItem}</span> of{" "}
-            <span className="font-medium">{total}</span> courses
+    <section className="container mx-auto px-5 lg:px-0 py-8">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Admissions</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage all admission applications
           </p>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Show:</span>
-            <Select value={limit.toString()} onValueChange={handleLimitChange}>
-              <SelectTrigger className="w-20 h-9">
-                <SelectValue placeholder="9" />
+          {meta && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Showing {data?.data?.length || 0} of {meta.total} applications
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Toolbar: search + filter */}
+      <div className="flex flex-wrap items-center justify-between mb-6">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, email or phone..."
+            value={searchTerm}
+            onChange={handleSearch}
+            className="pl-8 pr-9"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2 mt-2 sm:mt-0">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <Select value={filterStatus} onValueChange={handleFilterChange}>
+            <SelectTrigger className="w-[150px] h-9">
+              <SelectValue placeholder="All status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="submitted">Submitted</SelectItem>
+              <SelectItem value="under-review">Under Review</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="h-9 px-3 text-muted-foreground hover:text-foreground"
+            >
+              Clear all
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Table / Empty state */}
+      {!isDataAvailable ? (
+        <AdmissionEmpty />
+      ) : (
+        <Card className="overflow-hidden border shadow-sm p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-muted/50 border-b">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        className="text-left px-6 py-3 text-sm font-medium text-muted-foreground"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {table.getRowModel().rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="px-6 py-4">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* Pagination */}
+      {isDataAvailable && (
+        <div className="flex items-center justify-between mt-4 w-full">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              Rows per page:
+            </span>
+            <Select
+              value={String(limit)}
+              onValueChange={handleLimitChange}
+            >
+              <SelectTrigger className="w-20 h-8">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {LIMIT_OPTIONS.map((opt) => (
-                  <SelectItem key={opt} value={opt.toString()}>
-                    {opt}
-                  </SelectItem>
-                ))}
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
               </SelectContent>
             </Select>
           </div>
-        </div>
 
-        {/* Course grid */}
-        <RevealStagger className="mt-8 grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.map((course: ICourse) => (
-            <RevealItem key={course._id} className="h-full">
-              <CourseCard course={course} />
-            </RevealItem>
-          ))}
-        </RevealStagger>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-12 flex justify-center">
+          <div>
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() => handlePageChange(page - 1)}
+                    onClick={() => handlePageChange(currentPageNum - 1)}
                     className={
-                      page <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"
+                      currentPageNum <= 1
+                        ? "pointer-events-none opacity-50"
+                        : "cursor-pointer"
                     }
                   />
                 </PaginationItem>
 
-                {/* Page numbers – show up to 5, with ellipsis */}
                 {Array.from(
-                  { length: Math.min(totalPages, 5) },
+                  { length: Math.min(totalPage, 5) },
                   (_, i) => {
                     let pageNumber: number;
-                    if (totalPages <= 5) {
+                    if (totalPage <= 5) {
                       pageNumber = i + 1;
-                    } else if (page <= 3) {
+                    } else if (currentPageNum <= 3) {
                       pageNumber = i + 1;
-                    } else if (page >= totalPages - 2) {
-                      pageNumber = totalPages - 4 + i;
+                    } else if (currentPageNum >= totalPage - 2) {
+                      pageNumber = totalPage - 4 + i;
                     } else {
-                      pageNumber = page - 2 + i;
+                      pageNumber = currentPageNum - 2 + i;
                     }
-                    if (pageNumber < 1 || pageNumber > totalPages)
+                    if (pageNumber < 1 || pageNumber > totalPage)
                       return null;
                     return (
                       <PaginationItem key={pageNumber}>
                         <PaginationLink
                           onClick={() => handlePageChange(pageNumber)}
-                          isActive={pageNumber === page}
+                          isActive={pageNumber === currentPageNum}
                         >
                           {pageNumber}
                         </PaginationLink>
@@ -190,17 +480,16 @@ export default function CoursePage() {
                   }
                 )}
 
-                {/* Ellipsis and last page if needed */}
-                {totalPages > 5 && page < totalPages - 2 && (
+                {totalPage > 5 && currentPageNum < totalPage - 2 && (
                   <>
                     <PaginationItem>
                       <PaginationEllipsis />
                     </PaginationItem>
                     <PaginationItem>
                       <PaginationLink
-                        onClick={() => handlePageChange(totalPages)}
+                        onClick={() => handlePageChange(totalPage)}
                       >
-                        {totalPages}
+                        {totalPage}
                       </PaginationLink>
                     </PaginationItem>
                   </>
@@ -208,9 +497,9 @@ export default function CoursePage() {
 
                 <PaginationItem>
                   <PaginationNext
-                    onClick={() => handlePageChange(page + 1)}
+                    onClick={() => handlePageChange(currentPageNum + 1)}
                     className={
-                      page >= totalPages
+                      currentPageNum >= totalPage
                         ? "pointer-events-none opacity-50"
                         : "cursor-pointer"
                     }
@@ -219,17 +508,21 @@ export default function CoursePage() {
               </PaginationContent>
             </Pagination>
           </div>
-        )}
-
-        {/* Back to home */}
-        <div className="mt-10 text-center">
-          <Link href="/">
-            <Button variant="outline" className="rounded-full">
-              ← Back to Home
-            </Button>
-          </Link>
         </div>
-      </div>
+      )}
+
+      {/* Modals */}
+      <ViewAdmissionModal
+        isModalOpen={isDetailModalOpen}
+        setIsModalOpen={setIsDetailModalOpen}
+        admission={selectedItem}
+      />
+      <ReviewAdmissionModal
+        isModalOpen={isReviewModalOpen}
+        setIsModalOpen={setIsReviewModalOpen}
+        admission={itemToReview}
+        onSuccess={refetch}
+      />
     </section>
   );
 }

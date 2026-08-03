@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import {useSession} from "@/lib/auth-context";
 
 import { formSchema, steps, defaultValues, FormValues } from "@/schema/admission.schema";
 import PersonalInfoStep from "@/components/admission/steps/PersonalInfoStep";
@@ -34,6 +35,9 @@ export default function AdmissionPage() {
 
   const searchParams = useSearchParams();
   const courseId = searchParams.get("courseId");
+
+  const {session} = useSession();
+  const user = session?.user;
 
   const { mutate: postData, isLoading: isSubmitting } = usePost(
     "/admissions",
@@ -54,7 +58,11 @@ export default function AdmissionPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       ...defaultValues,
-      course: courseId || defaultValues.course,
+      course: courseId as string,
+      user: user.id,
+      fullName: user.name,
+      email: user.email,
+      phone: user.phone || "",
     },
   });
 
