@@ -15,11 +15,13 @@ import {
   Award,
   Calendar,
   FileText,
+  CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { motion } from 'motion/react';
 
 interface ApiResponse {
   success: boolean;
@@ -92,8 +94,8 @@ export default function CertificatesPage() {
   const generateCertificate = async (certificate: ICertificate) => {
     setGeneratingId(certificate._id);
     try {
-      const userName = certificate.enrollment?.user?.name || "Student";
-      const courseTitle = certificate.enrollment?.course?.title || "Course";
+      const userName = certificate?.user?.name || "Student";
+      const courseTitle = certificate?.course?.title || "Course";
       const issueDate = formatDate(certificate.issuedAt || certificate.createdAt);
 
       // Create a hidden container for the certificate
@@ -265,6 +267,7 @@ export default function CertificatesPage() {
 }
 
 // Certificate Card Component
+// Certificate Card Component (redesigned)
 function CertificateCard({
   certificate,
   onGenerate,
@@ -274,53 +277,88 @@ function CertificateCard({
   onGenerate: (cert: ICertificate) => void;
   isGenerating: boolean;
 }) {
-  const courseTitle = certificate.enrollment?.course?.title || "Course";
+  const courseTitle = certificate.course?.title || "Course";
+  const userName = certificate.user?.name || "Student";
   const issuedAt = certificate.issuedAt || certificate.createdAt;
+  const certNumber = certificate.certificateNumber || certificate._id.slice(-8);
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow flex flex-col border-primary/20">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg line-clamp-2">{courseTitle}</CardTitle>
-          <Badge variant="default" className="shrink-0 bg-primary/10 text-primary">
-            <Award className="h-3 w-3 mr-1" />
-            Certificate
+    <motion.div
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.2 }}
+      className="group relative overflow-hidden rounded-xl border border-primary/10 bg-white shadow-lg hover:shadow-xl transition-shadow"
+    >
+      {/* Decorative gradient top bar */}
+      <div className="h-2 w-full bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-400" />
+
+      {/* Header with icon and badge */}
+      <div className="relative px-5 pt-5 pb-2">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-400/20 to-yellow-400/20">
+              <Award className="h-6 w-6 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Certificate
+              </p>
+              <p className="text-sm font-medium text-amber-600">{certNumber}</p>
+            </div>
+          </div>
+          <Badge className="border-0 bg-amber-50 text-amber-700 shadow-sm">
+            <CheckCircle className="mr-1 h-3 w-3" /> Verified
           </Badge>
         </div>
-      </CardHeader>
-      <CardContent className="flex-1 space-y-3">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      </div>
+
+      {/* Content */}
+      <CardContent className="space-y-3 px-5 pb-2 pt-0">
+        <div>
+          <h3 className="text-lg font-bold leading-tight text-brand-ink line-clamp-2">
+            {courseTitle}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Awarded to <span className="font-medium text-brand-ink">{userName}</span>
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <Calendar className="h-4 w-4" />
           <span>Issued: {formatDate(issuedAt)}</span>
         </div>
-        <div className="text-sm text-muted-foreground">
-          Click "Generate & Download" to get your certificate.
+
+        {/* Optional: show a small seal/emblem */}
+        <div className="flex items-center gap-1 text-xs text-amber-600/80">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
+          <span>Official document</span>
         </div>
       </CardContent>
-      <CardFooter className="border-t pt-4 flex justify-between">
+
+      {/* Footer with download button */}
+      <CardFooter className="flex items-center justify-between gap-2 border-t border-muted/30 bg-muted/5 px-5 py-3">
         <div className="text-xs text-muted-foreground">
-          ID: {certificate._id.slice(-6)}
+          <FileText className="mr-1 inline h-3 w-3" />
+          PDF
         </div>
         <Button
           size="sm"
-          variant="outline"
-          className="text-primary border-primary/30 hover:bg-primary/10"
+          className="gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-md hover:shadow-lg hover:from-amber-600 hover:to-yellow-600 transition-all"
           onClick={() => onGenerate(certificate)}
           disabled={isGenerating}
         >
           {isGenerating ? (
             <>
-              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
               Generating...
             </>
           ) : (
             <>
-              <Download className="h-4 w-4 mr-1" />
-              Generate & Download
+              <Download className="h-4 w-4" />
+              Download
             </>
           )}
         </Button>
       </CardFooter>
-    </Card>
+    </motion.div>
   );
 }
