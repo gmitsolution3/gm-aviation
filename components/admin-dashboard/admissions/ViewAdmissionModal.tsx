@@ -1,31 +1,18 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { IAdmission } from "@/types";
 import { formatDate } from "@/utils";
-import {
-  Calendar,
-  Clock,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  GraduationCap,
-  FileText,
-  Image,
-  UserCircle,
-  BookOpen,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
+import { Calendar, Clock, Image } from "lucide-react";
+import Link from "next/link";
 
 interface ViewAdmissionModalProps {
   isModalOpen: boolean;
@@ -40,10 +27,24 @@ export default function ViewAdmissionModal({
 }: ViewAdmissionModalProps) {
   if (!admission) return null;
 
-  const { personalInformation, addressInformation, guardianInformation, educationInformation, aviationInformation, documents, course } = admission;
+  const {
+    personalInformation,
+    addressInformation,
+    guardianInformation,
+    educationInformation,
+    aviationInformation,
+    documents,
+    course,
+  } = admission;
 
   // Helper to render a section
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  const Section = ({
+    title,
+    children,
+  }: {
+    title: string;
+    children: React.ReactNode;
+  }) => (
     <div className="space-y-2">
       <h4 className="font-semibold text-sm text-muted-foreground border-b pb-1">
         {title}
@@ -54,7 +55,13 @@ export default function ViewAdmissionModal({
     </div>
   );
 
-  const InfoItem = ({ label, value }: { label: string; value: any }) => (
+  const InfoItem = ({
+    label,
+    value,
+  }: {
+    label: string;
+    value: any;
+  }) => (
     <div>
       <span className="text-muted-foreground">{label}:</span>{" "}
       <span className="font-medium">{value || "—"}</span>
@@ -70,14 +77,19 @@ export default function ViewAdmissionModal({
       rejected: "bg-red-500 hover:bg-red-600",
     };
     return (
-      <Badge className={`${variants[status] || "bg-gray-500"} text-white`}>
+      <Badge
+        className={`${variants[status] || "bg-gray-500"} text-white`}
+      >
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
   };
 
   return (
-    <Dialog open={isModalOpen} onOpenChange={() => setIsModalOpen(false)}>
+    <Dialog
+      open={isModalOpen}
+      onOpenChange={() => setIsModalOpen(false)}
+    >
       <DialogContent className="!max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
@@ -100,7 +112,9 @@ export default function ViewAdmissionModal({
                 label="Admission Open"
                 value={
                   course.isAdmissionOpen ? (
-                    <Badge className="bg-green-500 hover:bg-green-600">Yes</Badge>
+                    <Badge className="bg-green-500 hover:bg-green-600">
+                      Yes
+                    </Badge>
                   ) : (
                     <Badge variant="destructive">No</Badge>
                   )
@@ -114,13 +128,21 @@ export default function ViewAdmissionModal({
             <Section title="Applicant">
               <InfoItem
                 label="Name"
-                value={personalInformation?.fullName || admission.user?.name}
+                value={
+                  personalInformation?.fullName ||
+                  admission.user?.name
+                }
               />
               <InfoItem
                 label="Email"
-                value={personalInformation?.email || admission.user?.email}
+                value={
+                  personalInformation?.email || admission.user?.email
+                }
               />
-              <InfoItem label="Phone" value={personalInformation?.phone} />
+              <InfoItem
+                label="Phone"
+                value={personalInformation?.phone}
+              />
               <InfoItem
                 label="Date of Birth"
                 value={
@@ -146,13 +168,17 @@ export default function ViewAdmissionModal({
             {/* Address */}
             <Section title="Address Information">
               <div className="col-span-2 space-y-1">
-                <p className="text-muted-foreground">Present Address:</p>
+                <p className="text-muted-foreground">
+                  Present Address:
+                </p>
                 <p className="font-medium">
                   {addressInformation?.presentAddress || "—"}
                 </p>
               </div>
               <div className="col-span-2 space-y-1">
-                <p className="text-muted-foreground">Permanent Address:</p>
+                <p className="text-muted-foreground">
+                  Permanent Address:
+                </p>
                 <p className="font-medium">
                   {addressInformation?.permanentAddress || "—"}
                 </p>
@@ -162,11 +188,26 @@ export default function ViewAdmissionModal({
 
           {/* Guardian Info */}
           <Section title="Guardian Information">
-            <InfoItem label="Father's Name" value={guardianInformation?.fatherName} />
-            <InfoItem label="Mother's Name" value={guardianInformation?.motherName} />
-            <InfoItem label="Guardian's Name" value={guardianInformation?.guardianName} />
-            <InfoItem label="Relationship" value={guardianInformation?.relationship} />
-            <InfoItem label="Guardian Phone" value={guardianInformation?.guardianPhone} />
+            <InfoItem
+              label="Father's Name"
+              value={guardianInformation?.fatherName}
+            />
+            <InfoItem
+              label="Mother's Name"
+              value={guardianInformation?.motherName}
+            />
+            <InfoItem
+              label="Guardian's Name"
+              value={guardianInformation?.guardianName}
+            />
+            <InfoItem
+              label="Relationship"
+              value={guardianInformation?.relationship}
+            />
+            <InfoItem
+              label="Guardian Phone"
+              value={guardianInformation?.guardianPhone}
+            />
           </Section>
 
           {/* Education & Aviation */}
@@ -220,16 +261,19 @@ export default function ViewAdmissionModal({
                     .replace(/([A-Z])/g, " $1")
                     .replace(/^./, (str) => str.toUpperCase());
                   return (
-                    <div key={key} className="border rounded p-2 flex items-center gap-2">
+                    <div
+                      key={key}
+                      className="border rounded p-2 flex items-center gap-2"
+                    >
                       <Image className="h-4 w-4 text-muted-foreground" />
-                      <a
+                      <Link
                         href={value.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary hover:underline text-sm truncate"
                       >
                         {label}
-                      </a>
+                      </Link>
                     </div>
                   );
                 })}
@@ -253,7 +297,10 @@ export default function ViewAdmissionModal({
           </div>
 
           <div className="flex justify-end pt-2">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsModalOpen(false)}
+            >
               Close
             </Button>
           </div>

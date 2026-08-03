@@ -62,6 +62,7 @@ export default async function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${manrope.variable}`}
+      data-scroll-behavior="smooth"
     >
       <body className="bg-background font-body antialiased">
         <TooltipProvider>

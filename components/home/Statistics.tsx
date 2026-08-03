@@ -48,9 +48,16 @@ const SWEEP_START = -220; // degrees
 const SWEEP_END = 40; // degrees
 const SWEEP_TOTAL = SWEEP_END - SWEEP_START; // 260° sweep, like an airspeed dial
 
+function round(n: number, precision = 3) {
+  return Math.round(n * 10 ** precision) / 10 ** precision;
+}
+
 function polar(cx: number, cy: number, r: number, angleDeg: number) {
   const rad = (angleDeg * Math.PI) / 180;
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  return {
+    x: round(cx + r * Math.cos(rad)),
+    y: round(cy + r * Math.sin(rad)),
+  };
 }
 
 function describeArc(

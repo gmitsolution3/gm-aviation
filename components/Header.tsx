@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
   Mail,
@@ -11,6 +10,7 @@ import {
   Plane,
   X,
 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -28,7 +28,7 @@ const NAV_LINKS = [
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   const isHome = pathname === "/";
 
@@ -52,32 +52,32 @@ export default function Header() {
       <div className="hidden bg-brand-navy text-white lg:block">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-2.5 text-sm">
           <div className="flex items-center gap-6 text-white/80">
-            <a
+            <Link
               href="tel:+18005550110"
               className="flex items-center gap-2 transition-colors hover:text-brand-accent"
             >
               <Phone className="size-4" aria-hidden="true" />
               +1 (800) 555-0110
-            </a>
-            <a
+            </Link>
+            <Link
               href="mailto:admissions@meridianaviation.edu"
               className="flex items-center gap-2 transition-colors hover:text-brand-accent"
             >
               <Mail className="size-4" aria-hidden="true" />
               admissions@meridianaviation.edu
-            </a>
+            </Link>
             <span className="flex items-center gap-2">
               <MapPin className="size-4" aria-hidden="true" />
               Terminal Drive, Geneva International Airport
             </span>
           </div>
-          <a
+          <Link
             href="#admission"
             className="flex items-center gap-1.5 font-semibold text-brand-accent transition-colors hover:text-white"
           >
             Apply Now
             <ArrowRight className="size-4" aria-hidden="true" />
-          </a>
+          </Link>
         </div>
       </div>
 
@@ -95,7 +95,11 @@ export default function Header() {
         >
           <Link href="/">
             <Image
-              src={!isHome || scrolled ? "/images/logo-2.png" : "/images/logo-white.png"}
+              src={
+                !isHome || scrolled
+                  ? "/images/logo-2.png"
+                  : "/images/logo-white.png"
+              }
               height={300}
               width={300}
               className="w-36"
@@ -109,7 +113,9 @@ export default function Header() {
                 <Link
                   href={link.href}
                   className={`text-sm font-semibold transition-colors hover:text-brand-accent ${
-                    !isHome || scrolled ? "text-brand-ink" : "text-white"
+                    !isHome || scrolled
+                      ? "text-brand-ink"
+                      : "text-white"
                   }`}
                 >
                   {link.label}
@@ -194,19 +200,19 @@ export default function Header() {
               <ul className="mt-8 flex flex-col gap-1">
                 {NAV_LINKS.map((link) => (
                   <li key={link.href}>
-                    <a
+                    <Link
                       href={link.href}
                       onClick={() => setOpen(false)}
                       className="block rounded-xl px-4 py-3 text-base font-semibold text-brand-ink transition-colors hover:bg-brand-light hover:text-brand-accent"
                     >
                       {link.label}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
 
               <div className="mt-auto space-y-4 border-t border-brand-border pt-6">
-                <a
+                <Link
                   href="tel:+18005550110"
                   className="flex items-center gap-2 text-sm text-brand-body"
                 >
@@ -215,8 +221,8 @@ export default function Header() {
                     aria-hidden="true"
                   />
                   +1 (800) 555-0110
-                </a>
-                <a
+                </Link>
+                <Link
                   href="mailto:admissions@meridianaviation.edu"
                   className="flex items-center gap-2 text-sm text-brand-body"
                 >
@@ -225,7 +231,7 @@ export default function Header() {
                     aria-hidden="true"
                   />
                   admissions@meridianaviation.edu
-                </a>
+                </Link>
                 <Button
                   className="w-full rounded-full bg-brand-accent font-semibold text-brand-navy hover:bg-brand-accent/90"
                   onClick={() => {

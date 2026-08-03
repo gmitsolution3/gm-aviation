@@ -1,4 +1,4 @@
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Link2Off, Mail, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -98,12 +98,12 @@ export default function Footer() {
               <ul className="mt-5 space-y-3 text-sm">
                 {col.links.map((link) => (
                   <li key={link}>
-                    <a
+                    <Link2Off
                       href="#"
                       className="transition-colors hover:text-brand-accent"
                     >
                       {link}
-                    </a>
+                    </Link2Off>
                   </li>
                 ))}
               </ul>
@@ -115,13 +115,13 @@ export default function Footer() {
           <p className="text-sm">{`© ${new Date().getFullYear()} Meridian Aviation Academy. All rights reserved.`}</p>
           <div className="flex items-center gap-2">
             {socials.map((s) => (
-              <a
+              <Link
                 key={s.label}
                 href="#"
                 className="rounded-full border border-white/15 px-4 py-1.5 text-xs font-medium transition-colors hover:border-brand-accent hover:text-brand-accent"
               >
                 {s.label}
-              </a>
+              </Link>
             ))}
           </div>
         </div>

@@ -313,12 +313,12 @@ export default function CourseDetailPage() {
                       aria-hidden="true"
                     />
                   </Link>
-                  <a
+                  <Link
                     href="tel:+18005550110"
                     className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-brand-border px-6 py-3 text-sm font-semibold text-brand-ink transition-colors hover:border-brand-navy"
                   >
                     Talk to an Advisor
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
